@@ -12,6 +12,8 @@
 import { RouterView } from "vue-router";
 import NavBar from "./components/NavBar.vue";
 import FooterBar from "./components/FooterBar.vue";
+
+//初始二次提交
 </script>
 
 <style scoped>
