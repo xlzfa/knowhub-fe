@@ -21,7 +21,7 @@
         <el-button text @click="goHome">发现</el-button>
         <el-button text @click="goCreate" type="primary" round>提问/发帖</el-button>
         <div v-if="isLoggedIn" class="user-box">
-          <el-avatar :src="user?.avatar" size="small" />
+          <el-avatar :src="user.avatar || '/images/default-avatar.jpg'" size="small" />
           <span class="user-name">{{ user?.name }}</span>
           <el-button link type="primary" @click="logout">退出</el-button>
         </div>
