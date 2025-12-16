@@ -1,9 +1,9 @@
 <template>
   <el-header class="nav">
     <div class="page-wrap nav-inner">
-      <div class="brand" @click="goHome">
+        <div class="brand" @click="goHome">
         <img src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f9e0.svg" alt="logo" />
-        <span>KonwHub</span>
+        <span>KnowHub</span>
       </div>
       <el-input
         v-model="keyword"
@@ -60,8 +60,11 @@ const goHot = () => router.push({ name: "hot" });
 const goCreate = () => router.push({ name: "create-post" });
 const goLogin = () => router.push({ name: "login" });
 const goRegister = () => router.push({ name: "register" });
-const logout = () => userStore.logout();
 const goProfile = () => router.push({ name: "profile" });
+const logout = () => {
+  userStore.logout();          // 清理状态
+  router.push({ name: "home" });  // 跳转到登录页
+};
 </script>
 
 <style scoped>

@@ -14,7 +14,7 @@
           </div>
         </div>
         <div class="muted" style="margin-top: 8px">
-          {{ user?.bio || "欢迎来到 KonwHub，一起交流知识。" }}
+          {{ user?.bio || "欢迎来到 KnowHub，一起交流知识。" }}
         </div>
       </div>
       <div class="card list-card">

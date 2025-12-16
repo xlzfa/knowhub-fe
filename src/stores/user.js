@@ -2,7 +2,7 @@ import axios from "axios";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-const TOKEN_KEY = "konwhub_token";
+const TOKEN_KEY = "knowhub_token";
 
 export const useUserStore = defineStore("user", () => {
   const token = ref(localStorage.getItem(TOKEN_KEY));
@@ -22,7 +22,7 @@ export const useUserStore = defineStore("user", () => {
   async function login(username, password) {
   try {
     const response = await axios.post("http://localhost:8080/user/login", { username, password });
-    console.log("response.data:", response.data);
+    // console.log("response.data:", response.data);
 
     // 注意这里取到 token
     const receivedToken = response.data.data.token;
@@ -53,6 +53,8 @@ export const useUserStore = defineStore("user", () => {
     currentUser.value = null;
     localStorage.removeItem("user");
     localStorage.removeItem(TOKEN_KEY);
+
+
   }
 
   function register(username) {

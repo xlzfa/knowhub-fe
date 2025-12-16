@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrap auth">
     <div class="card auth-card">
-      <div class="title">登录 KonwHub</div>
+      <div class="title">登录 KnowHub</div>
       <el-form :model="form" :rules="rules" ref="formRef" label-position="top">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" placeholder="请输入用户名" />

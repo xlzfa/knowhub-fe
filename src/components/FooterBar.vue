@@ -1,7 +1,7 @@
 <template>
   <footer class="footer">
     <div class="page-wrap flex-between">
-      <span class="muted">© 2025 KonwHub · 知识问答社区</span>
+      <span class="muted">© 2025 KnowHub · 知识问答社区</span>
       <div class="links">
         <a href="#" class="muted">关于</a>
         <a href="#" class="muted">反馈</a>
