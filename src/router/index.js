@@ -5,6 +5,7 @@ import RegisterPage from "../views/RegisterPage.vue";
 import PostDetailPage from "../views/PostDetailPage.vue";
 import CreatePostPage from "../views/CreatePostPage.vue";
 import ProfilePage from "../views/ProfilePage.vue";
+import EditProfilePage from "../views/EditProfilePage.vue";
 import SearchPage from "../views/SearchPage.vue";
 import HotPage from "../views/HotPage.vue";
 import { useUserStore } from "../stores/user";
@@ -27,6 +28,12 @@ const router = createRouter({
       path: "/profile",
       name: "profile",
       component: ProfilePage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/profile/edit",
+      name: "profile-edit",
+      component: EditProfilePage,
       meta: { requiresAuth: true }
     },
     { path: "/search", name: "search", component: SearchPage },

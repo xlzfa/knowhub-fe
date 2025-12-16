@@ -3,10 +3,14 @@
     <div class="main">
       <div class="card profile-card">
         <div class="user-row">
-          <el-avatar :src="user?.avatar" size="large" />
-          <div>
-            <div class="name">{{ user?.name }}</div>
-            <div class="muted">{{ user?.title || user?.bio }}</div>
+          <div class="user-info">
+            <el-avatar :src="user?.avatar" size="large" />
+            <div>
+              <div class="name">{{ user?.name }}</div>
+            </div>
+          </div>
+          <div class="profile-actions">
+            <el-button type="primary" plain @click="goEditProfile">编辑资料</el-button>
           </div>
         </div>
         <div class="muted" style="margin-top: 8px">
@@ -38,6 +42,7 @@
 
 <script setup lang="js">
 import { computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import SidebarHot from "../components/SidebarHot.vue";
 import PostCard from "../components/PostCard.vue";
@@ -47,6 +52,10 @@ import { usePostStore } from "../stores/posts";
 const { currentUser: user } = storeToRefs(useUserStore());
 const postStore = usePostStore();
 const { posts, postComments } = storeToRefs(postStore);
+
+const router = useRouter();
+
+const goEditProfile = () => router.push({ name: "profile-edit" });
 
 onMounted(() => {
   if (!posts.value.length) postStore.loadPosts();

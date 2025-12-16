@@ -6,7 +6,7 @@ const TOKEN_KEY = "konwhub_token";
 
 export const useUserStore = defineStore("user", () => {
   const token = ref(localStorage.getItem(TOKEN_KEY));
-  const currentUser = ref(null);
+  const currentUser = ref(localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null);
 
   const isLoggedIn = computed(() => Boolean(token.value));
 
@@ -34,10 +34,13 @@ export const useUserStore = defineStore("user", () => {
     // 保存用户信息
     currentUser.value = {
       id: response.data.data.id,
-      username: response.data.data.username,
-      avatar: response.data.data.avatar || 'src/images/default-avatar.jpg',
-      bio: response.data.data.bio
+      name: response.data.data.username,
+      avatar: response.data.data.avatar || '/src/images/default-avatar.jpg',
+      bio: response.data.data.bio,
+      email: response.data.data.email,
     };
+
+    localStorage.setItem("user", JSON.stringify(currentUser.value));
   } catch (err) {
     console.error("登录失败:", err);
     throw err;
@@ -48,6 +51,8 @@ export const useUserStore = defineStore("user", () => {
   function logout() {
     setToken(null);
     currentUser.value = null;
+    localStorage.removeItem("user");
+    localStorage.removeItem(TOKEN_KEY);
   }
 
   function register(username) {

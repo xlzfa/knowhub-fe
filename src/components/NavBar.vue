@@ -21,8 +21,13 @@
         <el-button text @click="goHome">发现</el-button>
         <el-button text @click="goCreate" type="primary" round>提问/发帖</el-button>
         <div v-if="isLoggedIn" class="user-box">
-          <el-avatar :src="user.avatar || '/images/default-avatar.jpg'" size="small" />
-          <span class="user-name">{{ user?.name }}</span>
+          <el-avatar
+            :src="user?.avatar"
+            size="small"
+            class="clickable-avatar"
+            @click="goProfile"
+          />
+          <!-- <span class="user-name clickable" @click="goProfile">{{ user?.name }}</span> -->
           <el-button link type="primary" @click="logout">退出</el-button>
         </div>
         <div v-else class="user-box">
@@ -56,6 +61,7 @@ const goCreate = () => router.push({ name: "create-post" });
 const goLogin = () => router.push({ name: "login" });
 const goRegister = () => router.push({ name: "register" });
 const logout = () => userStore.logout();
+const goProfile = () => router.push({ name: "profile" });
 </script>
 
 <style scoped>
@@ -112,6 +118,15 @@ const logout = () => userStore.logout();
 
 .user-name {
   font-weight: 500;
+}
+
+.clickable-avatar,
+.clickable {
+  cursor: pointer;
+}
+
+.user-name.clickable {
+  color: #409eff;
 }
 </style>
 
