@@ -47,10 +47,10 @@ const formRef = ref();
 const saving = ref(false);
 
 const form = reactive({
-    avatar: user.value?.avatar || "",
-    name: "",
-    email: "",
-    bio: ""
+      avatar: user.value?.avatar || "", // 存 OSS URL
+      name: user.value?.name || "",
+      email: user.value?.email || "",
+      bio: user.value?.bio || ""
     });
 
     const fileInput = ref(null);
@@ -58,16 +58,36 @@ const form = reactive({
 
     const chooseFile = () => fileInput.value?.click();
 
-    const onFileChange = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        preview.value = ev.target.result;
-        form.avatar = preview.value;
-    };
-    reader.readAsDataURL(file);
-    };
+    const onFileChange = async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  //本地预览（给人看）
+  preview.value = URL.createObjectURL(file);
+
+  //上传 OSS
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await request.post(
+      "/upload/avatar",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      }
+    );
+
+    //保存 OSS URL（给后端）
+    form.avatar = res.data.data;
+
+  } catch (err) {
+    ElMessage.error("头像上传失败");
+  }
+};
+
 
     const cancel = () => router.push({ name: "profile" });
 
