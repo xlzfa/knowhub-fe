@@ -8,10 +8,11 @@
           刷新
         </el-button>
       </div>
-      <div class="space-y-12">
-        <PostCard v-for="item in pagedPosts" :key="item.id" :post="item" />
-      </div>
-      <PaginationBar :total="posts.length" :current="page" :page-size="pageSize" @change="onPage" />
+          <div class="space-y-12">
+            <PostCard v-for="item in displayedPosts" :key="item.id" :post="item" />
+          </div>
+          <div ref="bottomSentinel" style="height:1px"></div>
+          <div style="text-align:center; margin-top:12px;" v-if="loadingMore">加载中...</div>
     </div>
     <div class="side">
       <SidebarHot />
@@ -20,7 +21,7 @@
 </template>
 
 <script setup lang="js">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, onBeforeUnmount, nextTick } from "vue";
 import { Refresh } from "@element-plus/icons-vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
@@ -31,22 +32,88 @@ import { usePostStore } from "../stores/posts";
 
 const postStore = usePostStore();
 const { posts } = storeToRefs(postStore);
-const page = ref(1);
-const pageSize = 5;
+const pageSize = 10;
+const visibleCount = ref(pageSize);
+const loadingMore = ref(false);
 
-const pagedPosts = computed(() => {
-  const start = (page.value - 1) * pageSize;
-  return posts.value.slice(start, start + pageSize);
-});
+const displayedPosts = computed(() => posts.value.slice(0, visibleCount.value));
 
-onMounted(() => {
-  if (!posts.value.length)
-    postStore.loadPosts().catch(() => ElMessage.error("加载帖子失败，请连接后端接口"));
-});
+let lastCheck = 0;
+const onScroll = () => {
+  const now = Date.now();
+  if (now - lastCheck < 200) return;
+  lastCheck = now;
+  const scrollTop = window.scrollY || window.pageYOffset;
+  const viewportHeight = window.innerHeight;
+  const fullHeight = document.documentElement.scrollHeight;
+  if (scrollTop + viewportHeight + 200 >= fullHeight) {
+    loadMore();
+  }
+};
 
-const onPage = (p) => (page.value = p);
+const bottomSentinel = ref(null);
+let observer = null;
+const createObserver = () => {
+  if (!('IntersectionObserver' in window) || !bottomSentinel.value) return;
+  observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      console.log('IntersectionObserver entry', entry.isIntersecting, entry.intersectionRatio, entry.boundingClientRect);
+          if (entry.isIntersecting) {
+            console.log('sentinel intersecting -> loadMore');
+        loadMore();
+      }
+    });
+  }, { root: null, rootMargin: '200px', threshold: 0 });
+  observer.observe(bottomSentinel.value);
+};
+
+const loadMore = async () => {
+  if (loadingMore.value) return;
+  if (postStore.loading) return; // 避免与正在进行的 loadPosts 冲突
+  if (visibleCount.value >= posts.value.length) {
+    loadingMore.value = true;
+    try {
+      if (typeof postStore.loadMorePosts === "function") {
+        await postStore.loadMorePosts();
+      } else {
+        // fallback: request next page via loadPosts (now appends when page>1)
+        const nextPage = Number(postStore.page) + 1;
+        await postStore.loadPosts(nextPage, pageSize);
+      }
+    } catch (e) {
+      ElMessage.error("加载更多失败");
+    } finally {
+      loadingMore.value = false;
+    }
+    visibleCount.value = posts.value.length;
+    return;
+  }
+  visibleCount.value += pageSize;
+};
+
 const refresh = () =>
   postStore.loadPosts().catch(() => ElMessage.error("加载帖子失败，请连接后端接口"));
+
+onMounted(async () => {
+  console.log('HomePage mounted, posts.length=', posts.value.length);
+  if (!posts.value.length) {
+    try {
+      await postStore.loadPosts();
+    } catch (e) {
+      console.error(e);
+      ElMessage.error("加载帖子失败，请连接后端接口");
+    }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  // wait next tick to ensure sentinel is rendered, then create observer
+  await nextTick();
+  createObserver();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", onScroll);
+  if (observer && bottomSentinel.value) observer.unobserve(bottomSentinel.value);
+});
 </script>
 
 <style scoped>
