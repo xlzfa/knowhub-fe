@@ -10,9 +10,9 @@
       </div>
 
       <div class="summary">
-        <span>{{ displayContent }}</span>
+        <span> {{ user }}: {{ displayContent }}</span>
         <template v-if="isTruncated">
-          <a class="detail-link" @click.stop.prevent="expanded = true"> 详情</a>
+          <a class="detail-link" @click.stop.prevent="expanded = true"> 阅读全文</a>
         </template>
         <template v-else-if="expanded">
           <a class="detail-link" @click.stop.prevent="expanded = false"> 收起</a>
@@ -24,7 +24,7 @@
     </template>
 
     <!-- original post style -->
-    <template v-else>
+    <!-- <template v-else>
       <div class="post-header">
         <div class="title">{{ post.title }}</div>
         <div class="meta">
@@ -40,7 +40,7 @@
         <div class="muted">{{ post.likes }} 赞 · {{ post.comments }} 评论</div>
         <LikeButton :count="post.likes" @like.stop="onLike" />
       </div>
-    </template>
+    </template> -->
   </div>
 </template>
 
@@ -65,9 +65,11 @@ const isAnswer = computed(() => {
 
 const questionTitle = computed(() => props.post.quertionTitle || props.post.questionTitle || "");
 
+const user = computed(() => props.post.user || props.post.author || {});
+
 const fullContent = computed(() => props.post.content || props.post.summary || "");
 
-const maxLen = 60;
+const maxLen = 100;
 const isTruncated = computed(() => !expanded.value && fullContent.value.length > maxLen);
 const displayContent = computed(() => {
   if (expanded.value) return fullContent.value;
@@ -132,5 +134,24 @@ const onCardClick = (e) => {
   border-top: 1px solid #eef0f6;
   padding-top: 10px;
 }
+
+
+.detail-link {
+  display: inline-block;
+  margin-left: 6px;
+  color: #175199;              /* 知乎蓝 */
+  font-size: 14px;
+  line-height: 1.6;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  vertical-align: baseline;
+}
+
+.detail-link:hover {
+  color: #0f3c75;
+  text-decoration: underline;
+}
+
 </style>
 
