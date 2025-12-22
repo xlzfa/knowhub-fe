@@ -14,7 +14,7 @@ const props = defineProps({
   count: { type: Number, default: 0 }
 });
 
-const emit = defineEmits(["update:modelValue", "like"]);
+const emit = defineEmits(["update:modelValue", "toggle"]);
 
 const internalLiked = ref(false);
 
@@ -23,10 +23,16 @@ watchEffect(() => {
 });
 
 const liked = computed(() => internalLiked.value);
-const onLike = () => {
-  internalLiked.value = true;
-  emit("update:modelValue", true);
-  emit("like");
+const onLike = (e) => {
+  // 停止冒泡到卡片（安全调用，支持缺省事件参数）
+  try {
+    e?.stopPropagation?.();
+  } catch (err) {
+    // ignore
+  }
+  internalLiked.value = !internalLiked.value;
+  emit("update:modelValue", internalLiked.value);
+  emit("toggle");
 };
 </script>
 

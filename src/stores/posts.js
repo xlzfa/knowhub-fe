@@ -85,12 +85,48 @@ export const usePostStore = defineStore("posts", () => {
     postComments.value[id] = [];
   }
 
-  async function likePost(id) {
-    // 尝试乐观更新，若后端接口存在可在此处调用
+  async function likePost(id, shouldLike = true) {
+    console.log("store.likePost called", { id, shouldLike });
+    // 支持切换：shouldLike = true 表示点赞，false 表示取消赞
     const target = posts.value.find((p) => p.id === id);
-    if (target) target.likeCount = (target.likeCount || 0) + 1;
-    if (currentPost.value?.id === id) {
-      currentPost.value.likeCount = (currentPost.value.likeCount || 0) + 1;
+    const prev = target ? { likeCount: target.likeCount || 0, liked: Boolean(target.liked) } : null;
+    const curPrev = currentPost.value?.id === id ? { likeCount: currentPost.value.likeCount || 0, liked: Boolean(currentPost.value.liked) } : null;
+
+    // 乐观更新
+    if (target) {
+      if (shouldLike && !prev.liked) {
+        target.likeCount = prev.likeCount + 1;
+        target.liked = true;
+      } else if (!shouldLike && prev.liked) {
+        target.likeCount = Math.max(0, prev.likeCount - 1);
+        target.liked = false;
+      }
+    }
+    if (curPrev) {
+      if (shouldLike && !curPrev.liked) {
+        currentPost.value.likeCount = curPrev.likeCount + 1;
+        currentPost.value.liked = true;
+      } else if (!shouldLike && curPrev.liked) {
+        currentPost.value.likeCount = Math.max(0, curPrev.likeCount - 1);
+        currentPost.value.liked = false;
+      }
+    }
+
+    try {
+      const res = await request.post("/answer/like", { id, like: !!shouldLike });
+      console.log("store.likePost response", res && res.data);
+    } catch (e) {
+      console.error("likePost sync failed", e);
+      // 回滚
+      if (target && prev) {
+        target.likeCount = prev.likeCount;
+        target.liked = prev.liked;
+      }
+      if (curPrev) {
+        currentPost.value.likeCount = curPrev.likeCount;
+        currentPost.value.liked = curPrev.liked;
+      }
+      throw e;
     }
   }
 

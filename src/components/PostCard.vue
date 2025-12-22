@@ -19,7 +19,7 @@
         </template>
       </div>
       <div class="footer flex-between">
-        <div class="muted">{{ post.likeCount }} 赞</div>
+        <LikeButton v-model="liked" :count="post.likeCount" @toggle="onToggle" />
       </div>
     </template>
 
@@ -48,13 +48,14 @@
 import { useRouter } from "vue-router";
 import LikeButton from "./LikeButton.vue";
 import { usePostStore } from "../stores/posts";
+import { useUserStore } from "../stores/user";
 
 const props = defineProps({
   post: { type: Object, required: true }
 });
 const router = useRouter();
 const postStore = usePostStore();
-import { computed, ref } from "vue";
+import { computed, ref, watchEffect } from "vue";
 
 const expanded = ref(false);
 
@@ -82,7 +83,24 @@ const formattedDate = computed(() => {
 });
 
 const goDetail = (id) => router.push({ name: "post-detail", params: { id } });
-const onLike = () => postStore.likePost(props.post.id);
+const onToggle = async () => {
+  console.log("PostCard:onToggle", { id: props.post.id, liked: liked.value });
+  if(!useUserStore().isLoggedIn) {
+    router.push({ name: "login" })
+    return;
+  }
+  try {
+    await postStore.likePost(props.post.id, liked.value);
+    console.log("PostCard:onToggle done", { id: props.post.id });
+  } catch (e) {
+    console.warn("点赞同步失败", e);
+  }
+};
+
+const liked = ref(Boolean(props.post.liked));
+watchEffect(() => {
+  liked.value = Boolean(props.post.liked);
+});
 
 const onCardClick = (e) => {
   // 点击详情/收起不会触发跳转，因为链接上带有 stop.prevent
