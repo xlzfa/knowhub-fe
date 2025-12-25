@@ -3,7 +3,7 @@
     <!-- answer style (来自后端的 answer row) -->
     <template v-if="isAnswer">
       <div class="post-header">
-        <div class="title question-title">{{ questionTitle }}</div>
+        <a class="title question-title" @click.stop.prevent="onQuestionClick">{{ questionTitle }}</a>
         <div class="meta">
           <span class="muted">回答 · {{ formattedDate }}</span>
         </div>
@@ -19,7 +19,7 @@
         </template>
       </div>
       <div class="footer flex-between">
-        <LikeButton v-model="liked" :count="post.likeCount" @toggle="onToggle" />
+        <LikeButton v-if="showLike" v-model="liked" :count="post.likeCount" @toggle="onToggle" />
       </div>
     </template>
 
@@ -51,7 +51,8 @@ import { usePostStore } from "../stores/posts";
 import { useUserStore } from "../stores/user";
 
 const props = defineProps({
-  post: { type: Object, required: true }
+  post: { type: Object, required: true },
+  showLike: { type: Boolean, default: true }
 });
 const router = useRouter();
 const postStore = usePostStore();
@@ -60,11 +61,34 @@ import { computed, ref, watchEffect } from "vue";
 const expanded = ref(false);
 
 const isAnswer = computed(() => {
-  // 后端字段名拼写为 quertionTitle；也兼容 questionTitle
-  return Boolean(props.post && (props.post.quertionTitle || props.post.questionTitle));
+  // 识别为 answer 的条件：有 questionId（常见）、或嵌套的 post.question.id，或带有 quertionTitle/questionTitle
+  if (!props.post) return false;
+  if (props.post.questionId != null) return true;
+  if (props.post.question && props.post.question.id != null) return true;
+  return Boolean(props.post.quertionTitle || props.post.questionTitle);
 });
 
 const questionTitle = computed(() => props.post.quertionTitle || props.post.questionTitle || "");
+
+const questionId = computed(() => {
+  return (
+    props.post.questionId ||
+    props.post.question?.id ||
+    props.post.question_id ||
+    props.post.questionPostId ||
+    props.post.question_post_id ||
+    null
+  );
+});
+
+const onQuestionClick = (e) => {
+  const qid = questionId.value;
+  if (qid) {
+    goDetail(qid);
+  } else {
+    goDetail(props.post.id);
+  }
+};
 
 const user = computed(() => props.post.user || props.post.author || {});
 
