@@ -197,62 +197,74 @@ export const usePostStore = defineStore("posts", () => {
     }
   }
 
-  async function likePost(id, shouldLike = true) {
-    console.log("store.likePost called", { id, shouldLike });
-    // 支持切换：shouldLike = true 表示点赞，false 表示取消赞
-    const target = posts.value.find((p) => p.id === id);
-    const prev = target ? { likeCount: target.likeCount || 0, liked: Boolean(target.liked) } : null;
-    const curPrev = currentPost.value?.id === id ? { likeCount: currentPost.value.likeCount || 0, liked: Boolean(currentPost.value.liked) } : null;
+async function likePost(id, shouldLike = true) {
+  console.log("store.likePost called", { id, shouldLike });
 
-    // 乐观更新
-    if (target) {
-      if (shouldLike && !prev.liked) {
-        target.likeCount = prev.likeCount + 1;
-        target.liked = true;
-      } else if (!shouldLike && prev.liked) {
-        target.likeCount = Math.max(0, prev.likeCount - 1);
-        target.liked = false;
+  const target = posts.value.find((p) => p.id === id);
+  const isCurrent = currentPost.value?.id === id;
+  const targetPost = target || currentPost.value;
+
+  const prev = target
+    ? { likeCount: target.likeCount || 0, liked: Boolean(target.liked) }
+    : null;
+
+  const curPrev = isCurrent
+    ? {
+        likeCount: currentPost.value.likeCount || 0,
+        liked: Boolean(currentPost.value.liked)
       }
+    : null;
+
+  // ✅ 正确判断：只有明确带 questionId 的才是 Answer
+  const isAnswer =
+    targetPost &&
+    targetPost.questionId != null;
+
+  // ===== 乐观更新 =====
+  const applyLike = (obj, prevState) => {
+    if (!obj || !prevState) return;
+    if (shouldLike && !prevState.liked) {
+      obj.likeCount = prevState.likeCount + 1;
+      obj.liked = true;
+    } else if (!shouldLike && prevState.liked) {
+      obj.likeCount = Math.max(0, prevState.likeCount - 1);
+      obj.liked = false;
     }
-    if (curPrev) {
-      if (shouldLike && !curPrev.liked) {
-        currentPost.value.likeCount = curPrev.likeCount + 1;
-        currentPost.value.liked = true;
-      } else if (!shouldLike && curPrev.liked) {
-        currentPost.value.likeCount = Math.max(0, curPrev.likeCount - 1);
-        currentPost.value.liked = false;
-      }
+  };
+
+  applyLike(target, prev);
+  applyLike(currentPost.value, curPrev);
+
+  try {
+    if (isAnswer) {
+      await request.post("/answer/like", {
+        id,
+        like: !!shouldLike
+      });
+    } else {
+      await request.post("/question/like", {
+        id,
+        like: !!shouldLike
+      });
+    }
+  } catch (e) {
+    console.error("likePost failed", e);
+
+    // 回滚
+    if (target && prev) {
+      target.likeCount = prev.likeCount;
+      target.liked = prev.liked;
+    }
+    if (isCurrent && curPrev) {
+      currentPost.value.likeCount = curPrev.likeCount;
+      currentPost.value.liked = curPrev.liked;
     }
 
-    try {
-      // 先尝试 answer like（兼容现有后端），若失败再尝试 question like
-      try {
-        const res = await request.post("/answer/like", { id, like: !!shouldLike });
-        console.log("store.likePost response (answer)", res && res.data);
-      } catch (e) {
-        console.warn("answer/like failed, try question/like", e);
-        try {
-          const qres = await request.post("/question/like", { id, like: !!shouldLike });
-          console.log("store.likePost response (question)", qres && qres.data);
-        } catch (e2) {
-          console.error("question/like also failed", e2);
-          throw e2;
-        }
-      }
-    } catch (e) {
-      console.error("likePost sync failed", e);
-      // 回滚
-      if (target && prev) {
-        target.likeCount = prev.likeCount;
-        target.liked = prev.liked;
-      }
-      if (curPrev) {
-        currentPost.value.likeCount = curPrev.likeCount;
-        currentPost.value.liked = curPrev.liked;
-      }
-      throw e;
-    }
+    throw e;
   }
+}
+
+
 
   async function createPost(payload) {
     console.warn("createPost 未实现，请接入后端接口", payload);

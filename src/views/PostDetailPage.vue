@@ -15,9 +15,11 @@
         </div>
         <LikeButton
           class="zh-like"
-          :count="question.likeCount || question.likes || 0"
-          @like="onLikeQuestion"
+          v-model="question.liked"
+          :count="question.likeCount || 0"
+          @toggle="onLikeQuestion"
         />
+
       </div>
 
       <div class="content">
@@ -113,10 +115,13 @@ const { currentPost: post, postComments } = storeToRefs(postStore);
 
 const postId = computed(() => Number(route.params.id || props.id));
 
-const question = computed(() => {
-  if (post.value) return post.value;
-  return postStore.posts.find((p) => p.id === postId.value) || null;
-});
+// const question = computed(() => {
+//   if (post.value) return post.value;
+//   return postStore.posts.find((p) => p.id === postId.value) || null;
+// });
+
+const question = post;
+
 
 const answers = computed(() => {
   if (!question.value) return [];
@@ -158,8 +163,31 @@ const onToggleAnswer = async (ans) => {
 
 const onLikeQuestion = () => {
   if (!question.value) return;
-  postStore.likePost(question.value.id);
+
+  if(questionLiked.value == false && (question.value.likeCount || 0) >0){
+    question.value.likeCount -=1;
+  }else if(questionLiked.value == true){
+    question.value.likeCount = (question.value.likeCount || 0) +1;
+  }
+  
+  postStore.likePost(question.value.id,questionLiked.value).catch(() => {
+      questionLiked.value = !questionLiked.value;
+    });
+
+  
 };
+
+const questionLiked = computed({
+  get() {
+    return Boolean(question.value?.liked);
+  },
+  set(val) {
+    if (question.value) {
+      question.value.liked = val;
+    }
+  }
+});
+
 
 onMounted(async () => {
   try {
