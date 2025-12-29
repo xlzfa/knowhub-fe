@@ -80,122 +80,54 @@ export const usePostStore = defineStore("posts", () => {
   }
 
   async function loadPostDetail(id) {
-    // 使用后端提供的 question/detail 接口
-    currentPost.value = null;
-    postComments.value[id] = [];
-    try {
-      const res = await request.get("/question/detail", { params: { pageNum: 1, id, pageSize: 10 } });
-      console.log("loadPostDetail /question/detail response", res && res.data);
-      const payload = res?.data?.data || res?.data || null;
-      if (!payload) {
-        currentPost.value = null;
-        return null;
-      }
+  currentPost.value = null;
 
-      // 常见返回形式： { question: {...}, answers: [...], comments: [...] }
-      // 但也兼容后端直接返回 { rows: [...] } 的情况（rows 中可能第一项是 question，其余是 answers）
-      let questionData = null;
-      let normalizedAnswers = [];
-      if (payload.question) {
-        questionData = payload.question;
-        // 支持 answers 为对象（带 rows/total）或直接为数组
-        normalizedAnswers = payload.answers?.rows || payload.answers || payload.answerList || payload.answersList || payload.rows || [];
-      } else if (Array.isArray(payload.rows)) {
-        const rows = payload.rows;
-        // 后端仅返回 answers 列表（每项带有 questionId），尝试单独拉取 question 详情
-        normalizedAnswers = rows;
-        // 尝试若干可能的 question 接口
-        let qdata = null;
-        try {
-          const qres1 = await request.get(`/question/${id}`).catch(() => null);
-          qdata = qres1?.data?.data || qres1?.data || null;
-        } catch (e) {
-          qdata = null;
-        }
-        if (!qdata) {
-          try {
-            const qres2 = await request.get(`/question/get`, { params: { id } }).catch(() => null);
-            qdata = qres2?.data?.data || qres2?.data || null;
-          } catch (e) {
-            qdata = null;
-          }
-        }
-        if (!qdata) {
-          try {
-            const qres3 = await request.get(`/question/info`, { params: { id } }).catch(() => null);
-            qdata = qres3?.data?.data || qres3?.data || null;
-          } catch (e) {
-            qdata = null;
-          }
-        }
-        if (!qdata) {
-          // 回退：用 rows 中的 questionId 和可能的 quertionTitle/questionTitle 构建占位 question
-          const sample = rows[0];
-          qdata = {
-            id: sample?.questionId || id,
-            title: sample?.quertionTitle || sample?.questionTitle || `问题 ${sample?.questionId || id}`,
-            content: sample?.questionContent || sample?.content || "",
-            author: sample?.questionAuthor || null
-          };
-        }
-        questionData = qdata;
-      } else {
-        // 回退：把 payload 本身当作 question
-        questionData = payload;
-        normalizedAnswers = payload.answers || payload.rows || [];
-      }
+  try {
+    const res = await request.get("/question/detail", {
+      params: { id, pageNum: 1, pageSize: 10 }
+    });
 
-      // 将解析得到的 answers 附到 questionData，便于视图直接使用原始答案列表
-      try {
-        // 不破坏原对象引用，优先添加 __answers 字段
-        if (questionData && !Object.prototype.hasOwnProperty.call(questionData, "__answers")) {
-          questionData.__answers = normalizedAnswers;
-        } else if (questionData) {
-          questionData.__answers = normalizedAnswers;
-        }
-      } catch (e) {
-        // ignore
-      }
-      currentPost.value = questionData;
-
-      // 合并到 posts
-      const existIds = new Set(posts.value.map((p) => p.id));
-      normalizedAnswers.forEach((a) => {
-        if (!existIds.has(a.id)) posts.value.push(a);
-      });
-
-      // 解析 comments：可能为 map 或数组
-      const commentsPayload = payload.comments || payload.commentList || payload.commentsList || [];
-      // 如果是数组，按 answerId/parentId 分组
-      if (Array.isArray(commentsPayload)) {
-        for (const c of commentsPayload) {
-          const targetId = c.answerId || c.postId || c.questionId || c.parentId || questionData.id;
-          postComments.value[targetId] = postComments.value[targetId] || [];
-          postComments.value[targetId].push(c);
-        }
-      } else if (commentsPayload && typeof commentsPayload === "object") {
-        // 预期为 { answerId: [..], questionId: [..] }
-        for (const key of Object.keys(commentsPayload)) {
-          const k = Number(key);
-          postComments.value[k] = commentsPayload[key] || [];
-        }
-      }
-
-      // 确保每个 answer 都有空数组（若后端没有评论数据）
-      normalizedAnswers.forEach((a) => {
-        postComments.value[a.id] = postComments.value[a.id] || [];
-      });
-
-      // 确保 question 自身的评论初始化
-      const qid = questionData.id || id;
-      postComments.value[qid] = postComments.value[qid] || [];
-
-      return questionData;
-    } catch (e) {
-      console.error("loadPostDetail error", e);
-      throw e;
+    const data = res?.data?.data;
+    if (!data) {
+      currentPost.value = null;
+      return null;
     }
+
+    /* question */
+    const question = data.question;
+    if (!question) {
+      currentPost.value = null;
+      return null;
+    }
+
+    /* answers */
+    const answers = data.answers?.rows || [];
+
+    /**
+     * 把 answers 挂到 question 上
+     * 页面只认 question + question.rows
+     */
+    question.rows = answers;
+
+    /* comments：按 answerId 整理 */
+    answers.forEach((ans) => {
+      const commentRows = ans.comments?.rows || [];
+      postComments.value[ans.id] = commentRows;
+    });
+
+    /* 初始化 question 自己的评论（如果以后支持） */
+    postComments.value[question.id] =
+      postComments.value[question.id] || [];
+
+    /* 设置当前问题 */
+    currentPost.value = question;
+
+    return question;
+  } catch (err) {
+    console.error("loadPostDetail error", err);
+    throw err;
   }
+}
 
 async function likePost(id, shouldLike = true) {
   console.log("store.likePost called", { id, shouldLike });
