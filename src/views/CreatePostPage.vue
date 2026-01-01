@@ -2,26 +2,63 @@
   <div class="page-wrap">
     <div class="card form-card">
       <div class="section-title">发布新帖</div>
-      <el-form :model="form" label-position="top" :rules="rules" ref="formRef">
+
+      <el-form
+        :model="form"
+        label-position="top"
+        :rules="rules"
+        ref="formRef"
+      >
+        <!-- 标题 -->
         <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" maxlength="80" show-word-limit placeholder="一句话说清主题" />
-        </el-form-item>
-        <el-form-item label="正文" prop="content">
           <el-input
-            v-model="form.content"
-            type="textarea"
-            :rows="8"
-            placeholder="详细描述你的问题或分享"
+            v-model="form.title"
+            maxlength="80"
+            show-word-limit
+            placeholder="一句话说清主题"
           />
         </el-form-item>
+
+        <!-- 正文（Markdown 编辑器） -->
+        <el-form-item label="正文" prop="content">
+          <MdEditor
+            v-model="form.content"
+            :preview="true"
+            :toolbarsExclude="['save']"
+            style="height: 420px"
+            placeholder="详细描述你的问题，支持 Markdown"
+          />
+        </el-form-item>
+
+        <!-- 标签 -->
         <el-form-item label="标签" prop="tags">
-          <el-select v-model="form.tags" multiple filterable allow-create default-first-option placeholder="选择或输入标签">
-            <el-option v-for="tag in presetTags" :key="tag" :value="tag" :label="tag" />
+          <el-select
+            v-model="form.tags"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            placeholder="选择或输入标签"
+          >
+            <el-option
+              v-for="tag in presetTags"
+              :key="tag"
+              :value="tag"
+              :label="tag"
+            />
           </el-select>
         </el-form-item>
+
         <div class="flex-between">
           <span class="muted">发布后可在个人中心管理</span>
-          <el-button type="primary" round :loading="loading" @click="submit">发布</el-button>
+          <el-button
+            type="primary"
+            round
+            :loading="loading"
+            @click="submit"
+          >
+            发布
+          </el-button>
         </div>
       </el-form>
     </div>
@@ -36,14 +73,26 @@ import { ElMessage } from "element-plus";
 import { usePostStore } from "../stores/posts";
 import { useUserStore } from "../stores/user";
 
-const form = reactive({ title: "", content: "", tags: [] });
+import { MdEditor } from "md-editor-v3";
+import "md-editor-v3/lib/style.css";
+
+
+const form = reactive({
+  title: "",
+  content: "",
+  tags: []
+});
+
 const rules = {
   title: [{ required: true, message: "请输入标题", trigger: "blur" }],
   content: [{ required: true, message: "请输入正文", trigger: "blur" }],
-  tags: [{ type: "array", required: true, message: "请至少选择一个标签", trigger: "change" }]
+  tags: [
+    { type: "array", required: true, message: "请至少选择一个标签", trigger: "change" }
+  ]
 };
 
 const presetTags = ["前端", "后端", "AI", "产品", "设计", "Vue", "经验分享"];
+
 const loading = ref(false);
 const formRef = ref();
 const postStore = usePostStore();
@@ -53,14 +102,16 @@ const { currentUser } = storeToRefs(useUserStore());
 const submit = () => {
   formRef.value?.validate(async (valid) => {
     if (!valid || !currentUser.value) return;
+
     loading.value = true;
     try {
       const post = await postStore.createPost({
         title: form.title,
-        content: form.content,
+        content: form.content, // 👈 Markdown 原文
         tags: form.tags,
         author: currentUser.value
       });
+
       if (post?.id) {
         router.push({ name: "post-detail", params: { id: post.id } });
       } else {
@@ -79,5 +130,14 @@ const submit = () => {
 .form-card {
   padding: 20px;
 }
-</style>
 
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.md-editor {
+  border-radius: 6px;
+}
+</style>
