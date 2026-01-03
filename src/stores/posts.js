@@ -199,8 +199,16 @@ async function likePost(id, shouldLike = true) {
 
 
   async function createPost(payload) {
-    console.warn("createPost 未实现，请接入后端接口", payload);
-    return null;
+    try {
+      await request.post("/answer/add", payload);
+    
+    } catch (e) {
+      console.error("回答失败", e);
+      throw e;
+    }
+
+
+
   }
 
   async function addComment(postId, content, user) {

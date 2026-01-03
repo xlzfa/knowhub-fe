@@ -3,7 +3,6 @@ import HomePage from "../views/HomePage.vue";
 import LoginPage from "../views/LoginPage.vue";
 import RegisterPage from "../views/RegisterPage.vue";
 import PostDetailPage from "../views/PostDetailPage.vue";
-import CreatePostPage from "../views/CreatePostPage.vue";
 import ProfilePage from "../views/ProfilePage.vue";
 import EditProfilePage from "../views/EditProfilePage.vue";
 import SearchPage from "../views/SearchPage.vue";
@@ -18,12 +17,6 @@ const router = createRouter({
     { path: "/login", name: "login", component: LoginPage },
     { path: "/register", name: "register", component: RegisterPage },
     { path: "/post/:id", name: "post-detail", component: PostDetailPage, props: true },
-    {
-      path: "/create",
-      name: "create-post",
-      component: CreatePostPage,
-      meta: { requiresAuth: true }
-    },
     {
       path: "/profile",
       name: "profile",

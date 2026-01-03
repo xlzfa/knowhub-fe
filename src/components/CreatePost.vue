@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrap">
     <div class="card form-card">
-      <div class="section-title">发布新帖</div>
+      <div class="section-title">回答问题</div>
 
       <el-form
         :model="form"
@@ -9,7 +9,7 @@
         :rules="rules"
         ref="formRef"
       >
-        <!-- 标题 -->
+        <!--
         <el-form-item label="标题" prop="title">
           <el-input
             v-model="form.title"
@@ -18,6 +18,9 @@
             placeholder="一句话说清主题"
           />
         </el-form-item>
+        
+        -->
+        
 
         <!-- 正文（Markdown 编辑器） -->
         <el-form-item label="正文" prop="content">
@@ -31,7 +34,7 @@
         </el-form-item>
 
         <!-- 标签 -->
-        <el-form-item label="标签" prop="tags">
+        <!-- <el-form-item label="标签" prop="tags">
           <el-select
             v-model="form.tags"
             multiple
@@ -47,7 +50,7 @@
               :label="tag"
             />
           </el-select>
-        </el-form-item>
+        </el-form-item> -->
 
         <div class="flex-between">
           <span class="muted">发布后可在个人中心管理</span>
@@ -77,6 +80,14 @@ import { MdEditor } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
 
 
+const props = defineProps({
+  questionId: {
+    type: Number,
+    required: true
+  }
+});
+
+
 const form = reactive({
   title: "",
   content: "",
@@ -84,20 +95,22 @@ const form = reactive({
 });
 
 const rules = {
-  title: [{ required: true, message: "请输入标题", trigger: "blur" }],
+  // title: [{ required: true, message: "请输入标题", trigger: "blur" }],
   content: [{ required: true, message: "请输入正文", trigger: "blur" }],
-  tags: [
-    { type: "array", required: true, message: "请至少选择一个标签", trigger: "change" }
-  ]
+  // tags: [
+  //   { type: "array", required: true, message: "请至少选择一个标签", trigger: "change" }
+  // ]
 };
 
-const presetTags = ["前端", "后端", "AI", "产品", "设计", "Vue", "经验分享"];
+// const presetTags = ["前端", "后端", "AI", "产品", "设计", "Vue", "经验分享"];
 
 const loading = ref(false);
 const formRef = ref();
 const postStore = usePostStore();
 const router = useRouter();
 const { currentUser } = storeToRefs(useUserStore());
+const emit = defineEmits(["success"]);
+
 
 const submit = () => {
   formRef.value?.validate(async (valid) => {
@@ -106,21 +119,17 @@ const submit = () => {
     loading.value = true;
     try {
       const post = await postStore.createPost({
-        title: form.title,
+        questionId: props.questionId,
         content: form.content, // 👈 Markdown 原文
-        tags: form.tags,
-        author: currentUser.value
+        // tags: form.tags,
+        userId: currentUser.value.id
       });
 
-      if (post?.id) {
-        router.push({ name: "post-detail", params: { id: post.id } });
-      } else {
-        ElMessage.warning("发帖功能未接入，请连接后端接口");
-      }
+        router.push({ name: "post-detail", params: { id: props.questionId } });
+      ElMessage.success("回答已发布");
+      emit("success");
     } catch (err) {
       ElMessage.error(err?.message || "发帖失败，请稍后再试");
-    } finally {
-      loading.value = false;
     }
   });
 };
