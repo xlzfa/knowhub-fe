@@ -28,6 +28,7 @@
             v-model="form.content"
             :preview="true"
             :toolbarsExclude="['save']"
+            :onUploadImg="onUploadImg"
             style="height: 420px"
             placeholder="详细描述你的问题，支持 Markdown"
           />
@@ -75,6 +76,8 @@ import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import { usePostStore } from "../stores/posts";
 import { useUserStore } from "../stores/user";
+
+import request from "@/utils/request";
 
 import { MdEditor } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
@@ -133,6 +136,43 @@ const submit = () => {
     }
   });
 };
+
+
+
+const onUploadImg = async (files, callback) => {
+  const urls = [];
+
+  try {
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await request.post(
+        "/upload/answer",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        }
+      );
+
+      const url = res.data?.data;
+      if (!url) throw new Error("未返回图片地址");
+
+      urls.push(url);
+    }
+
+    callback(urls);
+  } catch (e) {
+    console.error(e);
+    ElMessage.error("图片上传失败");
+  }
+};
+
+
+
+
 </script>
 
 <style scoped>
