@@ -19,7 +19,14 @@
       <div class="nav-actions">
         <el-button text @click="goHot">热门</el-button>
         <el-button text @click="goHome">发现</el-button>
-        <el-button text @click="goCreate" type="primary" round>提问/发帖</el-button>
+        <el-button
+          text
+          type="primary"
+          round
+          @click="openAskDialog"
+        >
+          提问
+        </el-button>
         <div v-if="isLoggedIn" class="user-box">
           <el-avatar
             :src="user?.avatar"
@@ -37,6 +44,48 @@
       </div>
     </div>
   </el-header>
+
+  <!-- 提问弹窗 -->
+  <el-dialog
+    v-model="askVisible"
+    title="发起提问"
+    width="600px"
+    :close-on-click-modal="false"
+  >
+    <el-form :model="askForm" label-position="top">
+      <el-form-item label="问题标题">
+        <el-input
+          v-model="askForm.title"
+          placeholder="写下你的问题标题"
+          maxlength="100"
+          show-word-limit
+        />
+      </el-form-item>
+
+      <el-form-item label="问题描述">
+        <el-input
+          v-model="askForm.content"
+          type="textarea"
+          :rows="6"
+          placeholder="详细描述你的问题，清晰的问题更容易获得好答案"
+          maxlength="1000"
+          show-word-limit
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <el-button @click="askVisible = false">取消</el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="submitQuestion"
+      >
+        发布问题
+      </el-button>
+    </template>
+  </el-dialog>
+
 </template>
 
 <script setup lang="js">
@@ -45,11 +94,64 @@ import { useRouter } from "vue-router";
 import { Search } from "@element-plus/icons-vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "../stores/user";
+import { ElMessage } from "element-plus";
+import request from "@/utils/request"; // 你项目里的封装
 
 const router = useRouter();
 const keyword = ref("");
 const userStore = useUserStore();
 const { isLoggedIn, currentUser: user } = storeToRefs(userStore);
+
+const askVisible = ref(false);
+const submitting = ref(false);
+
+const askForm = ref({
+  userId: null,
+  title: "",
+  content: ""
+});
+
+const openAskDialog = () => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning("请先登录再提问");
+    router.push({ name: "login" });
+    return;
+  }
+  askVisible.value = true;
+};
+
+
+const submitQuestion = async () => {
+  if (!askForm.value.title.trim()) {
+    ElMessage.warning("请输入问题标题");
+    return;
+  }
+
+  submitting.value = true;
+  try {
+    await request.post("/question/add", {
+      userId: user.value.id,
+      title: askForm.value.title,
+      content: askForm.value.content
+    });
+
+    ElMessage.success("提问成功");
+
+    askVisible.value = false;
+    askForm.value.title = "";
+    askForm.value.content = "";
+
+    // 可选：刷新首页 / 拉取最新问题
+    // router.go(0);
+  } catch (e) {
+    ElMessage.error("提问失败");
+  } finally {
+    submitting.value = false;
+  }
+};
+
+
+
 
 const onSearch = () => {
   router.push({ name: "search", query: { q: keyword.value } });
@@ -57,7 +159,7 @@ const onSearch = () => {
 
 const goHome = () => router.push({ name: "home" });
 const goHot = () => router.push({ name: "hot" });
-const goCreate = () => router.push({ name: "create-post" });
+// const goCreate = () => router.push({ name: "create-post" });
 const goLogin = () => router.push({ name: "login" });
 const goRegister = () => router.push({ name: "register" });
 const goProfile = () => router.push({ name: "profile" });
