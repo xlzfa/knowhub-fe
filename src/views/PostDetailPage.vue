@@ -64,9 +64,11 @@
                 <strong>{{ ans.user || "匿名" }}</strong>
               </div>
 
-              <div class="answer-body">
-                {{ ans.content }}
-              </div>
+          
+
+              <MdPreview
+              class="answer-body"
+              :modelValue="ans.content" />
 
               <div class="answer-time muted">
                 编辑于 {{ new Date(ans.createTime).toLocaleString() }}
@@ -116,6 +118,9 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
+import { MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/preview.css'
+
 
 import LikeButton from "../components/LikeButton.vue";
 import SidebarHot from "../components/SidebarHot.vue";

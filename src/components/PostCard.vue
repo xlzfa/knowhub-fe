@@ -15,17 +15,35 @@
 
         <!-- 回答内容 -->
         <div class="answer-content">
-          <strong class="answer-author">{{ user || "匿名" }}</strong>
-          <span>：</span>
-          <span>{{ displayContent }}</span>
+  <strong class="answer-author">{{ user || "匿名" }}</strong>
+  <span>：</span>
 
-          <template v-if="isTruncated">
-            <a class="detail-link" @click.stop.prevent="expanded = true">阅读全文</a>
-          </template>
-          <template v-else-if="expanded">
-            <a class="detail-link" @click.stop.prevent="expanded = false">收起</a>
-          </template>
-        </div>
+  <!-- Markdown 渲染 -->
+  <MdPreview
+    class="answer-md"
+    :modelValue="displayContent"
+  />
+
+  <!-- 展开 / 收起 -->
+  <template v-if="isTruncated && !expanded">
+    <a
+      class="detail-link"
+      @click.stop.prevent="expanded = true"
+    >
+      阅读全文
+    </a>
+  </template>
+
+  <template v-else-if="expanded">
+    <a
+      class="detail-link"
+      @click.stop.prevent="expanded = false"
+    >
+      收起
+    </a>
+  </template>
+</div>
+
 
         <!-- 时间 -->
         <div class="answer-meta muted">
@@ -65,6 +83,9 @@
 <script setup lang="js">
 import { useRouter } from "vue-router";
 import { computed, ref, reactive, watchEffect } from "vue";
+import { MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/preview.css'
+
 
 import LikeButton from "./LikeButton.vue";
 import CommentList from "../components/CommentList.vue";
