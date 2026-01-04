@@ -1,6 +1,6 @@
 <template>
   <!-- 整个列表中的一条“回答” -->
-  <div class="card zh-answer-item" @click="onCardClick">
+  <div class="card zh-answer-item">
     <template v-if="isAnswer">
       <div style="margin-left: 20px;">
         <!-- 问题标题 -->
@@ -15,42 +15,54 @@
 
         <!-- 回答内容 -->
         <div class="answer-content">
-  <strong class="answer-author">{{ user || "匿名" }}</strong>
-  <span>：</span>
+          <strong class="answer-author">{{ user || "匿名" }}</strong>
+          <span>：</span>
 
-  <!-- Markdown 渲染 -->
-  <MdPreview
-    class="answer-md"
-    :modelValue="displayContent"
-  />
+          <!-- Markdown 包裹层 -->
+          <div
+            ref="contentRef"
+            class="answer-md-wrapper"
+            :class="{ expanded }"
+            @load.capture="recalcHeight"
+          >
+            <MdPreview
+              class="answer-md"
+              :modelValue="fullContent"
+            />
 
-  <!-- 展开 / 收起 -->
-  <template v-if="isTruncated && !expanded">
-    <a
-      class="detail-link"
-      @click.stop.prevent="expanded = true"
-    >
-      阅读全文
-    </a>
-  </template>
+            <!-- 底部渐变遮罩（纯视觉，不可点） -->
+            <div
+              v-if="canExpand && !expanded"
+              class="expand-mask"
+            ></div>
+          </div>
 
-  <template v-else-if="expanded">
-    <a
-      class="detail-link"
-      @click.stop.prevent="expanded = false"
-    >
-      收起
-    </a>
-  </template>
-</div>
+          <!-- 展开 / 收起 控制 -->
+          <div v-if="canExpand" class="expand-action">
+            <a
+              v-if="!expanded"
+              class="expand-text"
+              @click.stop.prevent="expanded = true"
+            >
+              展开全文
+            </a>
 
+            <a
+              v-else
+              class="collapse-text"
+              @click.stop.prevent="expanded = false"
+            >
+              收起
+            </a>
+          </div>
+        </div>
 
         <!-- 时间 -->
-        <div class="answer-meta muted">
+        <div class="answer-meta">
           编辑于 {{ formattedDate }}
         </div>
 
-        <!-- 操作区（点赞 + 评论） -->
+        <!-- 操作区 -->
         <div class="answer-actions">
           <LikeButton
             v-if="showLike"
@@ -69,7 +81,7 @@
           </button>
         </div>
 
-        <!-- 评论区（按需挂载，知乎同款） -->
+        <!-- 评论区 -->
         <CommentList
           v-if="showComments[post.id]"
           :post-id="post.id"
@@ -80,12 +92,13 @@
   </div>
 </template>
 
+
+
 <script setup lang="js">
 import { useRouter } from "vue-router";
-import { computed, ref, reactive, watchEffect } from "vue";
-import { MdPreview } from 'md-editor-v3'
-import 'md-editor-v3/lib/preview.css'
-
+import { computed, ref, reactive, watchEffect, onMounted, nextTick } from "vue";
+import { MdPreview } from "md-editor-v3";
+import "md-editor-v3/lib/preview.css";
 
 import LikeButton from "./LikeButton.vue";
 import CommentList from "../components/CommentList.vue";
@@ -103,16 +116,21 @@ const postStore = usePostStore();
 const { postComments } = storeToRefs(postStore);
 
 const expanded = ref(false);
+const contentRef = ref(null);
+const canExpand = ref(false);
 
-/* ===== 评论展开状态（与回答区一致） ===== */
+/* ===== 评论展开状态 ===== */
 const showComments = reactive({});
 
 /* ===== 是否是回答 ===== */
 const isAnswer = computed(() => {
   if (!props.post) return false;
-  if (props.post.questionId != null) return true;
-  if (props.post.question?.id != null) return true;
-  return Boolean(props.post.quertionTitle || props.post.questionTitle);
+  return Boolean(
+    props.post.questionId ||
+    props.post.question?.id ||
+    props.post.questionTitle ||
+    props.post.quertionTitle
+  );
 });
 
 /* ===== 题目 ===== */
@@ -130,31 +148,15 @@ const questionId = computed(() => {
 });
 
 const user = computed(() => props.post.user || props.post.author || "");
-
 const fullContent = computed(() => props.post.content || props.post.summary || "");
-
-const maxLen = 100;
-const isTruncated = computed(
-  () => !expanded.value && fullContent.value.length > maxLen
-);
-
-const displayContent = computed(() => {
-  if (expanded.value) return fullContent.value;
-  return fullContent.value.length > maxLen
-    ? fullContent.value.slice(0, maxLen) + "..."
-    : fullContent.value;
-});
 
 const formattedDate = computed(() => {
   const t = props.post.createTime || props.post.createdAt;
   return t ? new Date(t).toLocaleString() : "";
 });
 
-const goDetail = (id) =>
-  router.push({ name: "post-detail", params: { id } });
-
 const onQuestionClick = () => {
-  goDetail(questionId.value || props.post.id);
+  router.push({ name: "post-detail", params: { id: questionId.value || props.post.id } });
 };
 
 /* ===== 点赞 ===== */
@@ -171,25 +173,31 @@ const onToggle = async () => {
   await postStore.likePost(props.post.id, liked.value);
 };
 
-/* ===== 评论切换（核心改造） ===== */
+/* ===== 评论切换 ===== */
 const toggleComments = (id) => {
   showComments[id] = !showComments[id];
-
-  // 与回答区一致：首次展开时初始化评论容器
   if (showComments[id] && !postComments.value[id]) {
     postComments.value[id] = [];
-    // 如果你有接口，这里可以换成：
-    // postStore.loadComments(id)
   }
 };
 
-const onCardClick = () => {
-  // 回答列表不整体跳转
+/* ===== 是否需要展开 ===== */
+onMounted(async () => {
+  await nextTick();
+  recalcHeight();
+});
+
+const recalcHeight = () => {
+  if (!contentRef.value) return;
+  const el = contentRef.value;
+  canExpand.value = el.scrollHeight > el.clientHeight + 4;
 };
 </script>
 
+
+
+
 <style scoped>
-/* ===== 整体回答流（不是卡片） ===== */
 .zh-answer-item {
   background-color: #fff;
   padding: 16px 0;
@@ -223,6 +231,69 @@ const onCardClick = () => {
   font-weight: 600;
 }
 
+/* ===== Markdown 画幅控制 ===== */
+.answer-md-wrapper {
+  max-height: 120px; /* 👈 控制默认高度 */
+  overflow: hidden;
+  position: relative;
+}
+
+.answer-md-wrapper.expanded {
+  max-height: none;
+}
+
+/* ===== Markdown 图片限制 ===== */
+.answer-md :deep(img) {
+  max-width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  display: block;
+  margin: 12px 0;
+  border-radius: 6px;
+}
+
+/* ===== 遮罩：只做视觉，不可点击 ===== */
+.expand-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.96)
+  );
+
+  pointer-events: none;
+}
+
+/* ===== 展开 / 收起 行为区 ===== */
+.expand-action {
+  margin-top: 6px;
+}
+
+.expand-text {
+  font-size: 14px;
+  color: #175199;
+  cursor: pointer;
+}
+
+.expand-text:hover {
+  text-decoration: underline;
+}
+
+.collapse-text {
+  font-size: 14px;
+  color: #8590a6;
+  cursor: pointer;
+}
+
+.collapse-text:hover {
+  text-decoration: underline;
+}
+
 /* ===== 时间 ===== */
 .answer-meta {
   margin-top: 6px;
@@ -238,7 +309,7 @@ const onCardClick = () => {
   margin-top: 8px;
 }
 
-/* 评论按钮 */
+/* ===== 评论按钮 ===== */
 .comment-btn.zhihu {
   background: none;
   border: none;
@@ -249,17 +320,6 @@ const onCardClick = () => {
 }
 
 .comment-btn:hover {
-  text-decoration: underline;
-}
-
-/* 展开 / 收起 */
-.detail-link {
-  margin-left: 6px;
-  color: #175199;
-  cursor: pointer;
-}
-
-.detail-link:hover {
   text-decoration: underline;
 }
 </style>
