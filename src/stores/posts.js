@@ -115,7 +115,7 @@ export const usePostStore = defineStore("posts", () => {
       postComments.value[ans.id] = commentRows;
     });
 
-    /* 初始化 question 自己的评论（如果以后支持） */
+    /* 初始化 question 自己的评论 */
     postComments.value[question.id] =
       postComments.value[question.id] || [];
 
@@ -211,35 +211,27 @@ async function likePost(id, shouldLike = true) {
 
   }
 
-  async function addComment(postId, content, user) {
-    if (!content || !content.trim()) return null;
-    try {
-      const payload = { postId, content };
-      const res = await request.post(`/comment/create`, payload).catch(() => null);
-      const data = res?.data?.data || res?.data || null;
-      // 若后端返回新评论对象，加入缓存
-      const newComment = data && data.comment ? data.comment : data;
-      if (newComment) {
-        postComments.value[postId] = postComments.value[postId] || [];
-        postComments.value[postId].unshift(newComment);
-        return newComment;
-      }
-      // 若后端没有返回对象，则放一个本地构造的临时对象
-      const tmp = {
-        id: Date.now(),
-        author: user || { name: "匿名" },
-        content,
-        createdAt: new Date().toLocaleString(),
-        likes: 0
-      };
-      postComments.value[postId] = postComments.value[postId] || [];
-      postComments.value[postId].unshift(tmp);
-      return tmp;
-    } catch (e) {
-      console.error("addComment failed", e);
-      throw e;
-    }
+  async function addComment({ userId, answerId, parentId = null, content }) {
+  if (!content || !content.trim()) return null;
+
+  try {
+    const payload = {
+      userId,
+      answerId,
+      parentId,
+      content: content.trim()
+    };
+
+    const res = await request.post("/comment/add", payload).catch(() => null);
+
+    return res;
+
+  } catch (e) {
+    console.error("addComment failed", e);
+    throw e;
   }
+}
+
 
   return {
     posts,
