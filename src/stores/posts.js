@@ -113,11 +113,8 @@ export const usePostStore = defineStore("posts", () => {
     answers.forEach((ans) => {
       const commentRows = ans.comments?.rows || [];
       postComments.value[ans.id] = commentRows;
+      postComments.value[ans.id + "_total"] = ans.comments?.total || commentRows.length;
     });
-
-    /* 初始化 question 自己的评论 */
-    postComments.value[question.id] =
-      postComments.value[question.id] || [];
 
     /* 设置当前问题 */
     currentPost.value = question;
@@ -212,14 +209,14 @@ async function likePost(id, shouldLike = true) {
   }
 
   async function addComment({ userId, answerId, parentId = null, content }) {
-  if (!content || !content.trim()) return null;
+  if (!content) return null;
 
   try {
     const payload = {
       userId,
       answerId,
       parentId,
-      content: content.trim()
+      content,
     };
 
     const res = await request.post("/comment/add", payload).catch(() => null);

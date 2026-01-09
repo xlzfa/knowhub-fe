@@ -113,15 +113,18 @@ const commentList = computed(() => {
 /* 编辑器 */
 const draft = ref("");
 
+const parent_id = -1;
+
 const submit = async () => {
   if (!draft.value.trim() || !currentUser.value) return;
 
   try {
-    const ok = await postStore.addComment(
-      props.postId,
-      draft.value,
-      currentUser.value
-    );
+    const ok = await postStore.addComment({
+      userId: currentUser.value.id,
+      answerId: props.postId,
+      parentId: parent_id,
+      content: draft.value,
+  });
 
     if (ok) {
       draft.value = "";

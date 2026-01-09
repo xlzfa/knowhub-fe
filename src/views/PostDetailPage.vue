@@ -87,7 +87,7 @@
                   @click.prevent="toggleComments(ans.id)"
                 >
                   {{ showComments[ans.id] ? "隐藏评论" : "评论" }}
-                  · {{ (postComments[ans.id] || []).length }}
+                  · {{ postComments[ans.id + "_total"] || (postComments[ans.id] || []).length }}
                 </button>
               </div>
 
