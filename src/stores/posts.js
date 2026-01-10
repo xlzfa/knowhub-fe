@@ -229,6 +229,16 @@ async function likePost(id, shouldLike = true) {
   }
 }
 
+  async function getCommentList({answerId}) {
+    try {
+      const res = await request.get(`/comment/list/${answerId}`);
+
+      return res?.data?.data;
+    } catch (e) {
+      console.error("CommentList failed", e);
+      throw e;
+    }
+  } 
 
   return {
     posts,
@@ -246,7 +256,8 @@ async function likePost(id, shouldLike = true) {
     loadPostDetail,
     likePost,
     createPost,
-    addComment
+    addComment,
+    getCommentList,
   };
 });
 

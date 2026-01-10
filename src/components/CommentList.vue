@@ -75,12 +75,86 @@
         </div>
       </div>
 
+            <!-- 查看全部评论（知乎风格） -->
+      <div
+        v-if="commentList.length >= 3"
+        class="view-all"
+      >
+        <el-button
+          link
+          type="primary"
+          :loading="showAllLoading"
+          @click="loadAllComments"
+        >
+          查看全部评论
+        </el-button>
+      </div>
+
       <!-- 空状态 -->
       <div v-if="!commentList.length" class="empty">
         还没有评论，快来抢沙发吧～
       </div>
     </div>
   </div>
+
+  <!-- 全部评论弹窗（知乎风格） -->
+<el-dialog
+  v-model="showAllDialog"
+  width="600px"
+  top="10vh"
+  :show-close="false"
+  class="comment-dialog"
+>
+  <!-- 头部 -->
+  <div class="dialog-header">
+    <span class="dialog-title">全部评论 · {{ allComments.length }}</span>
+    <el-button
+      link
+      class="close-btn"
+      @click="showAllDialog = false"
+    >
+      ✕
+    </el-button>
+  </div>
+
+  <!-- 评论列表（复用原样式） -->
+  <div class="comment-list">
+    <div
+      v-for="item in allComments"
+      :key="item.id"
+      class="comment-item"
+    >
+      <el-avatar size="small" class="avatar">
+        {{ item.username?.[0] || "?" }}
+      </el-avatar>
+
+      <div class="comment-main">
+        <div class="comment-header">
+          <span class="author-name">
+            {{ item.username || "匿名用户" }}
+          </span>
+          <span class="comment-time">
+            {{ formatTime(item.createTime) }}
+          </span>
+        </div>
+
+        <div class="comment-content">
+          {{ item.content }}
+        </div>
+
+        <div class="comment-actions">
+          <span class="action">回复</span>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="!allComments.length" class="empty">
+      还没有评论
+    </div>
+  </div>
+</el-dialog>
+
+
 </template>
 
 <script setup lang="js">
@@ -110,6 +184,8 @@ const commentList = computed(() => {
   return postComments.value[props.postId] || [];
 });
 
+const allComments = ref([]);
+
 /* 编辑器 */
 const draft = ref("");
 
@@ -136,6 +212,36 @@ const submit = async () => {
     ElMessage.error(err?.message || "评论失败，请稍后再试");
   }
 };
+
+
+/* 查看全部评论 */
+const showAllLoading = ref(false);
+const showAllDialog = ref(false);
+
+
+
+const loadAllComments = async () => {
+  if (showAllLoading.value) return;
+
+  try {
+    showAllLoading.value = true;
+
+    const res = await postStore.getCommentList({
+      answerId: props.postId
+    });
+
+    // 把“全部评论”存到弹窗专用变量
+    allComments.value = res || [];
+
+    showAllDialog.value = true;
+
+  } catch (err) {
+    ElMessage.error(err?.message || "加载评论失败");
+  } finally {
+    showAllLoading.value = false;
+  }
+};
+
 
 const toLogin = () => {
   router.push({
@@ -273,4 +379,39 @@ const formatTime = (time) => {
   font-size: 13px;
   color: #999;
 }
+
+
+/* 弹窗整体 */
+.comment-dialog {
+  border-radius: 8px;
+}
+
+/* 弹窗头部 */
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dialog-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.close-btn {
+  font-size: 18px;
+  color: #999;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* 弹窗内容可滚动 */
+.comment-dialog .comment-list {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 </style>
