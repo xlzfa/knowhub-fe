@@ -77,7 +77,7 @@
             @click.stop.prevent="toggleComments(post.id)"
           >
             {{ showComments[post.id] ? "隐藏评论" : "评论" }}
-            · {{ (postComments[post.id] || []).length }}
+            · {{ commentCount }}
           </button>
         </div>
 
@@ -118,6 +118,13 @@ const { postComments } = storeToRefs(postStore);
 const expanded = ref(false);
 const contentRef = ref(null);
 const canExpand = ref(false);
+
+
+const commentCount = computed(() => {
+  return props.post.comments?.total ?? 0;
+});
+
+
 
 /* ===== 评论展开状态 ===== */
 const showComments = reactive({});
