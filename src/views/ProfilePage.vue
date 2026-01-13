@@ -62,13 +62,20 @@ onMounted(() => {
 });
 
 const myPosts = computed(() =>
-  posts.value.filter((p) => p.author.name === user.value?.name)
+  posts.value.filter(
+    (p) =>
+      (p.author?.name || p.user?.name) === user.value?.name
+  )
 );
 
 const myComments = computed(() => {
   const all = Object.values(postComments.value || {}).flat();
-  return all.filter((c) => c.author.name === user.value?.name);
+  return all.filter(
+    (c) =>
+      (c.author?.name || c.user?.name) === user.value?.name
+  );
 });
+
 </script>
 
 <style scoped>
