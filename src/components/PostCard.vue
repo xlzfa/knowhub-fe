@@ -186,6 +186,9 @@ const toggleComments = (id) => {
   if (showComments[id] && !postComments.value[id]) {
     postComments.value[id] = [];
   }
+
+  const rows = props.post.comments?.rows || [];
+    postComments.value[id] = rows;
 };
 
 /* ===== 是否需要展开 ===== */
