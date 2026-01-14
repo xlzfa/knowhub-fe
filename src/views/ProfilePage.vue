@@ -1,6 +1,7 @@
 <template>
   <div class="page-wrap layout">
     <div class="main">
+      <!-- 用户信息：完全不动 -->
       <div class="card profile-card">
         <div class="user-row">
           <div class="user-info">
@@ -10,23 +11,73 @@
             </div>
           </div>
           <div class="profile-actions">
-            <el-button type="primary" plain @click="goEditProfile">编辑资料</el-button>
+            <el-button type="primary" plain @click="goEditProfile">
+              编辑资料
+            </el-button>
           </div>
         </div>
         <div class="muted" style="margin-top: 8px">
           {{ user?.bio || "欢迎来到 KnowHub，一起交流知识。" }}
         </div>
       </div>
+
+
       <div class="card list-card">
-        <div class="section-title">我的帖子</div>
-        <div class="space-y-12">
-          <PostCard v-for="item in myPosts" :key="item.id" :post="item" />
+      <!-- 横栏 -->
+      <div class="profile-tabs">
+        <div
+          class="tab"
+          :class="{ active: activeTab === 'question' }"
+          @click="activeTab = 'question'"
+        >
+          我的提问
+        </div>
+        <div
+          class="tab"
+          :class="{ active: activeTab === 'answer' }"
+          @click="activeTab = 'answer'"
+        >
+          我的回答
+        </div>
+        <div
+          class="tab"
+          :class="{ active: activeTab === 'comment' }"
+          @click="activeTab = 'comment'"
+        >
+          我的评论
         </div>
       </div>
-      <div class="card list-card">
-        <div class="section-title">我的评论</div>
-        <div v-if="myComments.length">
-          <div v-for="item in myComments" :key="item.id" class="comment-item">
+
+      <!-- Question -->
+      <div v-if="activeTab === 'question'">
+        <div v-if="myQuestions && myQuestions.length" class="space-y-12">
+          <div v-for="item in myQuestions" :key="item.id" class="qa-item">
+            <div class="qa-title">{{ item.title }}</div>
+            <div class="muted">{{ item.createdAt }}</div>
+          </div>
+        </div>
+        <el-empty v-else description="还没有提问" />
+      </div>
+
+      <!-- Answer -->
+      <div v-else-if="activeTab === 'answer'">
+        <div v-if="myAnswers && myAnswers.length" class="space-y-12">
+          <div v-for="item in myAnswers" :key="item.id" class="qa-item">
+            <div class="content">{{ item.content }}</div>
+            <div class="muted">{{ item.createdAt }}</div>
+          </div>
+        </div>
+        <el-empty v-else description="还没有回答" />
+      </div>
+
+      <!-- Comment -->
+      <div v-else>
+        <div v-if="myComments && myComments.length">
+          <div
+            v-for="item in myComments"
+            :key="item.id"
+            class="comment-item"
+          >
             <div class="muted">{{ item.createdAt }}</div>
             <div class="content">{{ item.content }}</div>
           </div>
@@ -34,48 +85,46 @@
         <el-empty v-else description="还没有评论" />
       </div>
     </div>
+
+  </div>
+
+
+    <!-- 侧边栏：不动 -->
     <div class="side">
       <SidebarHot />
     </div>
   </div>
 </template>
 
+
+
 <script setup lang="js">
-import { computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
+
 import SidebarHot from "../components/SidebarHot.vue";
-import PostCard from "../components/PostCard.vue";
 import { useUserStore } from "../stores/user";
 import { usePostStore } from "../stores/posts";
 
 const { currentUser: user } = storeToRefs(useUserStore());
-const postStore = usePostStore();
-const { posts, postComments } = storeToRefs(postStore);
+
+const contentStore = usePostStore();
+const { myQuestions, myAnswers, myComments } =
+  storeToRefs(contentStore);
 
 const router = useRouter();
+const activeTab = ref("question");
 
-const goEditProfile = () => router.push({ name: "profile-edit" });
+const goEditProfile = () => {
+  router.push({ name: "profile-edit" });
+};
 
 onMounted(() => {
-  if (!posts.value.length) postStore.loadPosts();
+  contentStore.loadMyQuestions();
+  contentStore.loadMyAnswers();
+  contentStore.loadMyComments();
 });
-
-const myPosts = computed(() =>
-  posts.value.filter(
-    (p) =>
-      (p.author?.name || p.user?.name) === user.value?.name
-  )
-);
-
-const myComments = computed(() => {
-  const all = Object.values(postComments.value || {}).flat();
-  return all.filter(
-    (c) =>
-      (c.author?.name || c.user?.name) === user.value?.name
-  );
-});
-
 </script>
 
 <style scoped>
@@ -111,5 +160,36 @@ const myComments = computed(() => {
     grid-template-columns: 1fr;
   }
 }
+
+.profile-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #e4e7ed;
+  margin-bottom: 16px;
+}
+
+.profile-tabs .tab {
+  padding: 8px 0;
+  font-size: 15px;
+  color: #606266;
+  cursor: pointer;
+  position: relative;
+}
+
+.profile-tabs .tab.active {
+  color: #409eff;
+  font-weight: 600;
+}
+
+.profile-tabs .tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 2px;
+  background-color: #409eff;
+}
+
 </style>
 

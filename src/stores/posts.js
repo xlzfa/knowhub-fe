@@ -9,6 +9,10 @@ export const usePostStore = defineStore("posts", () => {
   const currentPost = ref(null);
   const postComments = ref({});
 
+  const myQuestions = ref([]); 
+  const myAnswers = ref([]);  
+  const myComments = ref([]);
+
   const page = ref(1);
   const pageSize = ref(10);
   const total = ref(0);
@@ -240,6 +244,68 @@ async function likePost(id, shouldLike = true) {
     }
   } 
 
+  async function loadMyQuestions(userId) {
+    try {
+
+      myQuestions.value = []; 
+      const res = await request.get("/question/mine", {
+        params: { userId, pageNum: 1, pageSize: 10 }
+      });
+
+      const data = res?.data?.data;
+      if (!data) {
+        posts.value = [];
+        return;
+      }
+
+      posts.value = data.rows || [];
+    } catch (err) {
+      console.error("loadMyPosts error", err);
+    }
+  }
+
+  async function loadMyAnswers(userId) {
+    try {
+
+      myAnswers.value = [];
+      const res = await request.get("/answer/mine", {
+        params: { userId, pageNum: 1, pageSize: 10 }
+      });
+
+      const data = res?.data?.data;
+      if (!data) {
+        posts.value = [];
+        return;
+      }
+
+      posts.value = data.rows || [];
+    } catch (err) {
+      console.error("loadMyAnswers error", err);
+    }
+  }
+
+  async function loadMyComments(userId) {
+    try {
+
+      myComments.value = [];
+      const res = await request.get("/comment/mine", {
+        params: { userId, pageNum: 1, pageSize: 10 }
+      });
+
+      const data = res?.data?.data;
+      if (!data) {
+        posts.value = [];
+        return;
+      }
+
+      posts.value = data.rows || [];
+    } catch (err) {
+      console.error("loadMyComments error", err);
+    }
+  }
+
+
+
   return {
     posts,
     hotPosts,
@@ -249,6 +315,12 @@ async function likePost(id, shouldLike = true) {
     page,
     pageSize,
     total,
+    myQuestions,
+    myAnswers,
+    myComments,
+    loadMyQuestions,
+    loadMyAnswers,
+    loadMyComments,
     loadPosts,
     loadMorePosts,
     loadHot,
