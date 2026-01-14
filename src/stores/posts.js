@@ -246,63 +246,51 @@ async function likePost(id, shouldLike = true) {
 
   async function loadMyQuestions(userId) {
     try {
+      console.log("loadMyQuestions called, userId =", userId);
+      myQuestions.value = [];
 
-      myQuestions.value = []; 
       const res = await request.get("/question/mine", {
-        params: { userId, pageNum: 1, pageSize: 10 }
+        params: { userId }
       });
+      console.log("question mine res =", res?.data);
 
-      const data = res?.data?.data;
-      if (!data) {
-        posts.value = [];
-        return;
-      }
+      myQuestions.value = res?.data?.data || [];
 
-      posts.value = data.rows || [];
     } catch (err) {
-      console.error("loadMyPosts error", err);
+      console.error("loadMyQuestions error", err);
     }
   }
 
+
   async function loadMyAnswers(userId) {
     try {
-
       myAnswers.value = [];
+
       const res = await request.get("/answer/mine", {
-        params: { userId, pageNum: 1, pageSize: 10 }
+        params: { userId }
       });
 
-      const data = res?.data?.data;
-      if (!data) {
-        posts.value = [];
-        return;
-      }
-
-      posts.value = data.rows || [];
+      myAnswers.value = res?.data?.data || [];
     } catch (err) {
       console.error("loadMyAnswers error", err);
     }
   }
 
+
   async function loadMyComments(userId) {
     try {
-
       myComments.value = [];
+
       const res = await request.get("/comment/mine", {
-        params: { userId, pageNum: 1, pageSize: 10 }
+        params: { userId }
       });
 
-      const data = res?.data?.data;
-      if (!data) {
-        posts.value = [];
-        return;
-      }
-
-      posts.value = data.rows || [];
+      myComments.value = res?.data?.data || [];
     } catch (err) {
       console.error("loadMyComments error", err);
     }
   }
+
 
 
 

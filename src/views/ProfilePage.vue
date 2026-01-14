@@ -52,8 +52,13 @@
       <div v-if="activeTab === 'question'">
         <div v-if="myQuestions && myQuestions.length" class="space-y-12">
           <div v-for="item in myQuestions" :key="item.id" class="qa-item">
-            <div class="qa-title">{{ item.title }}</div>
-            <div class="muted">{{ item.createdAt }}</div>
+            <div
+              class="qa-title clickable"
+              @click="goQuestionDetail(item.id)"
+            >
+              {{ item.title }}
+            </div>
+            <div class="muted">{{ item.createdTime }}</div>
           </div>
         </div>
         <el-empty v-else description="还没有提问" />
@@ -64,7 +69,7 @@
         <div v-if="myAnswers && myAnswers.length" class="space-y-12">
           <div v-for="item in myAnswers" :key="item.id" class="qa-item">
             <div class="content">{{ item.content }}</div>
-            <div class="muted">{{ item.createdAt }}</div>
+            <div class="muted">{{ item.createdTime }}</div>
           </div>
         </div>
         <el-empty v-else description="还没有回答" />
@@ -78,7 +83,7 @@
             :key="item.id"
             class="comment-item"
           >
-            <div class="muted">{{ item.createdAt }}</div>
+            <div class="muted">{{ item.createdTime }}</div>
             <div class="content">{{ item.content }}</div>
           </div>
         </div>
@@ -99,7 +104,7 @@
 
 
 <script setup lang="js">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 
@@ -120,11 +125,27 @@ const goEditProfile = () => {
   router.push({ name: "profile-edit" });
 };
 
-onMounted(() => {
-  contentStore.loadMyQuestions();
-  contentStore.loadMyAnswers();
-  contentStore.loadMyComments();
-});
+const goQuestionDetail = (id) => {
+  router.push({
+    name: "post-detail",
+    params: { id }
+  });
+};
+
+
+watch(
+  () => user.value,
+  (u) => {
+    if (!u || !u.id) return;
+
+    console.log("ProfilePage user ready:", u.id);
+
+    contentStore.loadMyQuestions(u.id);
+    contentStore.loadMyAnswers(u.id);
+    contentStore.loadMyComments(u.id);
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
@@ -190,6 +211,29 @@ onMounted(() => {
   height: 2px;
   background-color: #409eff;
 }
+
+.qa-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f2f6;
+}
+
+.qa-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.qa-title.clickable {
+  cursor: pointer;
+  color: #303133;
+}
+
+.qa-title.clickable:hover {
+  color: #409eff;
+  text-decoration: underline;
+}
+
+
 
 </style>
 
