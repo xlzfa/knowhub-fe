@@ -87,9 +87,24 @@
             :key="item.id"
             class="comment-item"
           >
-            <div class="muted">{{ item.createdTime }}</div>
-            <div class="content">{{ item.content }}</div>
+            <div class="comment-meta">
+              评论于
+              <span
+                class="comment-link"
+                @click="goToMyComment(item)"
+              >
+                《{{ item.questionTitle }}》
+                · {{ item.answerUsername }} 的回答
+              </span>
+              · {{ item.createTime }}
+            </div>
+
+
+            <div class="content">
+              {{ item.content }}
+            </div>
           </div>
+
         </div>
         <el-empty v-else description="还没有评论" />
       </div>
@@ -138,6 +153,18 @@ const goQuestionDetail = (id) => {
     params: { id }
   });
 };
+
+const goToMyComment = (item) => {
+  router.push({
+    name: "post-detail",
+    params: { id: item.questionId },
+    query: {
+      answerId: item.answerId,
+      commentId: item.id
+    }
+  });
+};
+
 
 
 watch(
