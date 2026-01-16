@@ -63,7 +63,9 @@
         </div>
 
         <!-- 操作区 -->
-        <div class="answer-actions">
+        <div 
+        v-if="showLike || showComment"
+        class="answer-actions">
           <LikeButton
             v-if="showLike"
             class="zh-like"
@@ -73,6 +75,7 @@
           />
 
           <button
+            v-if="showComment"
             class="comment-btn zhihu"
             @click.stop.prevent="toggleComments(post.id)"
           >
@@ -83,7 +86,7 @@
 
         <!-- 评论区 -->
         <CommentList
-          v-if="showComments[post.id]"
+          v-if="showComment && showComments[post.id]"
           :post-id="post.id"
           :comments="postComments[post.id] || []"
         />
@@ -108,7 +111,8 @@ import { storeToRefs } from "pinia";
 
 const props = defineProps({
   post: { type: Object, required: true },
-  showLike: { type: Boolean, default: true }
+  showLike: { type: Boolean, default: true },
+  showComment: { type: Boolean, default: true }
 });
 
 const router = useRouter();

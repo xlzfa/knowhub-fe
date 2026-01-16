@@ -66,14 +66,18 @@
 
       <!-- Answer -->
       <div v-else-if="activeTab === 'answer'">
-        <div v-if="myAnswers && myAnswers.length" class="space-y-12">
-          <div v-for="item in myAnswers" :key="item.id" class="qa-item">
-            <div class="content">{{ item.content }}</div>
-            <div class="muted">{{ item.createdTime }}</div>
-          </div>
+        <div v-if="myAnswers && myAnswers.length">
+          <PostCard
+            v-for="item in myAnswers"
+            :key="item.id"
+            :post="item"
+            :show-like="false"
+            :show-comment="false"
+          />
         </div>
         <el-empty v-else description="还没有回答" />
       </div>
+
 
       <!-- Comment -->
       <div v-else>
@@ -111,6 +115,9 @@ import { storeToRefs } from "pinia";
 import SidebarHot from "../components/SidebarHot.vue";
 import { useUserStore } from "../stores/user";
 import { usePostStore } from "../stores/posts";
+
+import PostCard from "../components/PostCard.vue";
+
 
 const { currentUser: user } = storeToRefs(useUserStore());
 
