@@ -58,7 +58,13 @@
         </div>
 
         <div class="card answers-card">
-          <div v-for="ans in answers" :key="ans.id" class="answer-item">
+          <div
+            v-for="ans in answers"
+            :key="ans.id"
+            :id="`answer-${ans.id}`"
+            class="answer-item"
+          >
+
             <div class="answer-inner zh-answer">
               <div class="answer-header">
                 <strong>{{ ans.user || "匿名" }}</strong>
@@ -118,6 +124,8 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
+import { nextTick } from "vue";
+
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
 
@@ -191,16 +199,61 @@ const onLikeQuestion = () => {
 };
 
 onMounted(async () => {
-
-  // console.log("[DEBUG] route.params.id =", route.params.id);
-  // console.log("[DEBUG] props.id =", props.id);
-  // console.log("[DEBUG] postId.value =", postId.value);
   try {
     await postStore.loadPostDetail(postId.value);
   } catch {
     ElMessage.error("获取帖子详情失败");
+    return;
+  }
+
+  const { answerId } = route.query;
+  if (!answerId) return;
+
+  await nextTick(); // 等 DOM 渲染完成
+
+  const el = document.getElementById(`answer-${answerId}`);
+  if (el) {
+    const yOffset = -80; // 顶部预留高度（可调）
+    const y =
+      el.getBoundingClientRect().top +
+      window.pageYOffset +
+      yOffset;
+
+    window.scrollTo({
+      top: y,
+      behavior: "smooth"
+    });
+
+    // // 高亮（回答级）
+    // el.classList.add("answer-focus");
+    // setTimeout(() => {
+    //   el.classList.remove("answer-focus");
+    // }, 2000);
+
+
   }
 });
+
+
+watch(
+  () => showComments,
+  async () => {
+    const { commentId } = route.query;
+    if (!commentId) return;
+
+    await nextTick();
+
+    const el = document.getElementById(`comment-${commentId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("highlight");
+      setTimeout(() => el.classList.remove("highlight"), 2000);
+    }
+  },
+  { deep: true }
+);
+
+
 </script>
 
 <style scoped>
@@ -293,6 +346,32 @@ button.comment-btn.zhihu {
 button.comment-btn.zhihu:hover {
   color: #175199;
 }
+
+/* ================= 回答被定位时的“点中反馈” ================= */
+.answer-focus {
+  background-color: #f7faff; /* 非常浅的蓝灰 */
+  border-radius: 6px;
+  animation: answer-focus-pop 0.45s ease-out;
+}
+
+/* 模拟“被点了一下”的动效 */
+@keyframes answer-focus-pop {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  30% {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  }
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+}
+
+
+
 
 
 @media (max-width: 960px) {
