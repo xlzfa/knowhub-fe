@@ -224,11 +224,6 @@ onMounted(async () => {
       behavior: "smooth"
     });
 
-    // // 高亮（回答级）
-    // el.classList.add("answer-focus");
-    // setTimeout(() => {
-    //   el.classList.remove("answer-focus");
-    // }, 2000);
 
 
   }

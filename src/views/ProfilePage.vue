@@ -88,20 +88,22 @@
             class="comment-item"
           >
             <div class="comment-meta">
-              评论于
+              
               <span
-                class="comment-link"
+                class="qa-title clickable"
                 @click="goToMyComment(item)"
               >
-                《{{ item.questionTitle }}》
-                · {{ item.answerUsername }} 的回答
-              </span>
-              · {{ item.createTime }}
+                &nbsp;&nbsp;{{ item.questionTitle }}&nbsp;&nbsp;
+            </span>
+              中
+              &nbsp;&nbsp;&nbsp;{{ item.answerUsername }} &nbsp;&nbsp;&nbsp;的回答
+              {{ item.createTime }}
             </div>
 
+            <br>
 
             <div class="content">
-              {{ item.content }}
+              &nbsp;&nbsp;&nbsp;&nbsp;{{ item.content }}
             </div>
           </div>
 
