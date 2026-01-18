@@ -58,7 +58,7 @@
             >
               {{ item.title }}
             </div>
-            <div class="muted">{{ item.createdTime }}</div>
+            <div class="muted">{{ formatTime(item.createTime) }}</div>
           </div>
         </div>
         <el-empty v-else description="还没有提问" />
@@ -97,7 +97,7 @@
             </span>
               中
               &nbsp;&nbsp;&nbsp;{{ item.answerUsername }} &nbsp;&nbsp;&nbsp;的回答
-              {{ item.createTime }}
+              {{ formatTime(item.createTime)}}
             </div>
 
             <br>
@@ -133,6 +133,8 @@ import SidebarHot from "../components/SidebarHot.vue";
 import { useUserStore } from "../stores/user";
 import { usePostStore } from "../stores/posts";
 
+import { formatTime } from "@/utils/time";
+
 import PostCard from "../components/PostCard.vue";
 
 
@@ -144,6 +146,7 @@ const { myQuestions, myAnswers, myComments } =
 
 const router = useRouter();
 const activeTab = ref("question");
+
 
 const goEditProfile = () => {
   router.push({ name: "profile-edit" });
