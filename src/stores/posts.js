@@ -130,72 +130,61 @@ export const usePostStore = defineStore("posts", () => {
   }
 }
 
-async function likePost(id, shouldLike = true) {
-  console.log("store.likePost called", { id, shouldLike });
+async function likePost(id) {
+  const index = posts.value.findIndex(p => p.id === id);
+  const post =
+    index !== -1
+      ? posts.value[index]
+      : currentPost.value?.id === id
+      ? currentPost.value
+      : null;
 
-  const target = posts.value.find((p) => p.id === id);
-  const isCurrent = currentPost.value?.id === id;
-  const targetPost = target || currentPost.value;
+  if (!post) return;
 
-  const prev = target
-    ? { likeCount: target.likeCount || 0, liked: Boolean(target.liked) }
-    : null;
+  // === 关键：目标状态只由 UI 决定一次 ===
+  const targetLiked = post.liked ? false : true;
 
-  const curPrev = isCurrent
-    ? {
-        likeCount: currentPost.value.likeCount || 0,
-        liked: Boolean(currentPost.value.liked)
-      }
-    : null;
+  // === 防止重复执行同一目标 ===
+  if (post._pendingLiked === targetLiked) return;
+  post._pendingLiked = targetLiked;
 
-  // ✅ 正确判断：只有明确带 questionId 的才是 Answer
-  const isAnswer =
-    targetPost &&
-    targetPost.questionId != null;
-
-  // ===== 乐观更新 =====
-  const applyLike = (obj, prevState) => {
-    if (!obj || !prevState) return;
-    if (shouldLike && !prevState.liked) {
-      obj.likeCount = prevState.likeCount + 1;
-      obj.liked = true;
-    } else if (!shouldLike && prevState.liked) {
-      obj.likeCount = Math.max(0, prevState.likeCount - 1);
-      obj.liked = false;
-    }
+  const prev = {
+    likeCount: Number(post.likeCount ?? 0),
+    liked: Boolean(post.liked)
   };
 
-  applyLike(target, prev);
-  applyLike(currentPost.value, curPrev);
+  // === 乐观更新（只执行一次） ===
+  post.liked = targetLiked;
+  post.likeCount = Math.max(
+    0,
+    prev.likeCount + (targetLiked ? 1 : -1)
+  );
 
   try {
-    if (isAnswer) {
-      await request.post("/answer/like", {
+    const isAnswer = post.questionId != null;
+
+    await request.post(
+      isAnswer ? "/answer/like" : "/question/like",
+      {
         id,
-        like: !!shouldLike
-      });
-    } else {
-      await request.post("/question/like", {
-        id,
-        like: !!shouldLike
-      });
-    }
+        like: targetLiked
+      }
+    );
   } catch (e) {
-    console.error("likePost failed", e);
-
     // 回滚
-    if (target && prev) {
-      target.likeCount = prev.likeCount;
-      target.liked = prev.liked;
+    post.likeCount = prev.likeCount;
+    post.liked = prev.liked;
+  } finally {
+    // === 清理 pending 状态 ===
+    if (post._pendingLiked === targetLiked) {
+      post._pendingLiked = null;
     }
-    if (isCurrent && curPrev) {
-      currentPost.value.likeCount = curPrev.likeCount;
-      currentPost.value.liked = curPrev.liked;
-    }
-
-    throw e;
   }
 }
+
+
+
+
 
 
 
