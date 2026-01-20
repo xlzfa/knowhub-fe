@@ -21,7 +21,7 @@
           <LikeButton
             class="zh-like"
             v-model="question.liked"
-            :count="question.likeCount || 0"
+            :count="question.likeCount ?? 0"
             @toggle="onLikeQuestion"
           />
         </div>
@@ -82,11 +82,12 @@
 
               <div class="answer-actions zhihu">
                 <LikeButton
-                  class="zh-like"
-                  v-model="likedMap[ans.id]"
-                  :count="ans.likeCount || 0"
-                  @toggle="() => onToggleAnswer(ans)"
+                  v-model="ans.liked"
+                  :count="ans.likeCount"
+                  @toggle="(nextLiked) => onToggleAnswer(ans, nextLiked)"
                 />
+
+
 
                 <button
                   class="comment-btn zhihu"
@@ -151,7 +152,6 @@ const answers = computed(() => {
 });
 
 const showComments = reactive({});
-const likedMap = reactive({});
 const showWrite = ref(false);
 
 /* 展开/收起写回答 */
@@ -165,17 +165,7 @@ const onPostSuccess = () => {
   postStore.loadPostDetail(postId.value);
 };
 
-watch(
-  answers,
-  (arr) => {
-    arr.forEach((a) => {
-      if (likedMap[a.id] === undefined) {
-        likedMap[a.id] = Boolean(a.liked);
-      }
-    });
-  },
-  { immediate: true }
-);
+
 
 const toggleComments = (id) => {
   showComments[id] = !showComments[id];
@@ -184,19 +174,56 @@ const toggleComments = (id) => {
   }
 };
 
-const onToggleAnswer = async (ans) => {
+
+
+const onToggleAnswer = async (ans, nextLiked) => {
+  const prevLiked = !nextLiked;
+
   try {
-    await postStore.likePost(ans.id, likedMap[ans.id]);
+    const res = await postStore.likePost({
+      id: ans.id,
+      type: "answer",
+      like: nextLiked
+    });
+
+    const data = res.data.data;
+    ans.liked = data.liked;
+    ans.likeCount = data.likeCount;
   } catch {
-    likedMap[ans.id] = !likedMap[ans.id];
+    ans.liked = prevLiked;
   }
 };
 
-const onLikeQuestion = () => {
-  postStore.likePost(question.value.id, question.value.liked).catch(() => {
-    question.value.liked = !question.value.liked;
-  });
+
+
+
+
+const onLikeQuestion = async (nextLiked) => {
+  const prevLiked = !nextLiked;
+
+  try {
+    const res = await postStore.likePost({
+      id: question.value.id,
+      type: "question",
+      like: nextLiked
+    });
+
+    const data = res.data.data;
+
+    question.value.liked = data.liked;
+    question.value.likeCount = data.likeCount;
+  } catch {
+    question.value.liked = prevLiked;
+  }
 };
+
+
+
+
+
+
+
+
 
 onMounted(async () => {
   try {

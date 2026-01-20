@@ -1,38 +1,43 @@
 <template>
-  <el-button class="like-btn" :type="liked ? 'primary' : 'default'" size="small" @click="onLike" plain round>
+  <el-button
+    class="like-btn"
+    :type="modelValue ? 'primary' : 'default'"
+    size="small"
+    plain
+    round
+    @click="onLike"
+  >
     <el-icon><Pointer /></el-icon>
-    <span>{{ liked ? "已赞" : "点赞" }} · {{ count }}</span>
+    <span>{{ modelValue ? "已赞" : "点赞" }} · {{ count }}</span>
   </el-button>
 </template>
 
-<script setup lang="js">
-import { computed, ref, watchEffect } from "vue";
+<script setup>
 import { Pointer } from "@element-plus/icons-vue";
 
 const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  count: { type: Number, default: 0 }
+  modelValue: {
+    type: Boolean,
+    required: true
+  },
+  count: {
+    type: Number,
+    default: 0
+  }
 });
 
 const emit = defineEmits(["update:modelValue", "toggle"]);
 
-const internalLiked = ref(false);
-
-watchEffect(() => {
-  internalLiked.value = props.modelValue ?? false;
-});
-
-const liked = computed(() => internalLiked.value);
 const onLike = (e) => {
-  // 停止冒泡到卡片（安全调用，支持缺省事件参数）
-  try {
-    e?.stopPropagation?.();
-  } catch (err) {
-    // ignore
-  }
-  internalLiked.value = !internalLiked.value;
-  emit("update:modelValue", internalLiked.value);
-  emit("toggle");
+  e?.stopPropagation?.();
+
+  const nextLiked = !props.modelValue;
+
+  // 1️⃣ 正确更新 v-model
+  emit("update:modelValue", nextLiked);
+
+  // 2️⃣ 把 nextLiked 明确传给父组件
+  emit("toggle", nextLiked);
 };
 </script>
 
@@ -41,4 +46,3 @@ const onLike = (e) => {
   border-radius: 999px;
 }
 </style>
-

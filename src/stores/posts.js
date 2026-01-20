@@ -130,57 +130,18 @@ export const usePostStore = defineStore("posts", () => {
   }
 }
 
-async function likePost(id) {
-  const index = posts.value.findIndex(p => p.id === id);
-  const post =
-    index !== -1
-      ? posts.value[index]
-      : currentPost.value?.id === id
-      ? currentPost.value
-      : null;
 
-  if (!post) return;
-
-  // === 关键：目标状态只由 UI 决定一次 ===
-  const targetLiked = post.liked ? false : true;
-
-  // === 防止重复执行同一目标 ===
-  if (post._pendingLiked === targetLiked) return;
-  post._pendingLiked = targetLiked;
-
-  const prev = {
-    likeCount: Number(post.likeCount ?? 0),
-    liked: Boolean(post.liked)
-  };
-
-  // === 乐观更新（只执行一次） ===
-  post.liked = targetLiked;
-  post.likeCount = Math.max(
-    0,
-    prev.likeCount + (targetLiked ? 1 : -1)
+async function likePost({ id, type, like }) {
+  // type: "question" | "answer"
+  return request.post(
+    type === "answer" ? "/answer/like" : "/question/like",
+    { id, like }
   );
-
-  try {
-    const isAnswer = post.questionId != null;
-
-    await request.post(
-      isAnswer ? "/answer/like" : "/question/like",
-      {
-        id,
-        like: targetLiked
-      }
-    );
-  } catch (e) {
-    // 回滚
-    post.likeCount = prev.likeCount;
-    post.liked = prev.liked;
-  } finally {
-    // === 清理 pending 状态 ===
-    if (post._pendingLiked === targetLiked) {
-      post._pendingLiked = null;
-    }
-  }
 }
+
+
+
+
 
 
 

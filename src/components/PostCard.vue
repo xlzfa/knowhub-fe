@@ -67,12 +67,11 @@
         v-if="showLike || showComment"
         class="answer-actions">
           <LikeButton
-            v-if="showLike"
-            class="zh-like"
-            v-model="liked"
-            :count="post.likeCount || 0"
-            @toggle="onToggle"
+            v-model="post.liked"
+            :count="post.likeCount"
+            @toggle="(nextLiked) => onToggleAnswer(post, nextLiked)"
           />
+
 
           <button
             v-if="showComment"
@@ -171,18 +170,31 @@ const onQuestionClick = () => {
 };
 
 /* ===== 点赞 ===== */
-const liked = ref(Boolean(props.post.liked));
-watchEffect(() => {
-  liked.value = Boolean(props.post.liked);
-});
+const onToggleAnswer = async (ans, nextLiked) => {
+  const prevLiked = !nextLiked;
 
-const onToggle = async () => {
-  if (!useUserStore().isLoggedIn) {
-    router.push({ name: "login" });
-    return;
+  try {
+    const res = await postStore.likePost({
+      id: ans.id,
+      type: "answer",
+      like: nextLiked
+    });
+
+    const data = res.data.data;
+    ans.liked = data.liked;
+    ans.likeCount = data.likeCount;
+  } catch {
+    ans.liked = prevLiked;
   }
-  await postStore.likePost(props.post.id, liked.value);
 };
+
+// const onToggle = async () => {
+//   if (!useUserStore().isLoggedIn) {
+//     router.push({ name: "login" });
+//     return;
+//   }
+//   await postStore.likePost(props.post.id, liked.value);
+// };
 
 /* ===== 评论切换 ===== */
 const toggleComments = (id) => {
