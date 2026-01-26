@@ -131,13 +131,45 @@ export const usePostStore = defineStore("posts", () => {
 }
 
 
-async function likePost({ id, type, like }) {
-  // type: "question" | "answer"
-  return request.post(
-    type === "answer" ? "/answer/like" : "/question/like",
-    { id, like }
-  );
-}
+  async function likePost({ id, type, like }) {
+    const res = await request.post(
+        type === "answer" ? "/answer/like" : "/question/like",
+        { id, like }
+    );
+
+    const data = res?.data?.data;
+    if (!data) return res;
+
+    /* ===== 更新 feed 列表里的 answer ===== */
+    if (type === "answer") {
+      // 1️⃣ 首页 feed（posts）
+      const target = posts.value.find(p => p.id === id);
+      if (target) {
+        target.liked = data.liked;
+        target.likeCount = data.likeCount;
+      }
+
+      // 2️⃣ 详情页 answers（currentPost.rows）
+      if (currentPost.value?.rows) {
+        const ans = currentPost.value.rows.find(a => a.id === id);
+        if (ans) {
+          ans.liked = data.liked;
+          ans.likeCount = data.likeCount;
+        }
+      }
+    }
+
+    /* ===== 更新问题点赞 ===== */
+    if (type === "question") {
+      if (currentPost.value?.id === id) {
+        currentPost.value.liked = data.liked;
+        currentPost.value.likeCount = data.likeCount;
+      }
+    }
+
+    return res;
+  }
+
 
 
 

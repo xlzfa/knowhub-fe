@@ -18,12 +18,13 @@
             写回答
           </button>
 
-          <LikeButton
-            class="zh-like"
-            v-model="question.liked"
-            :count="question.likeCount ?? 0"
-            @toggle="onLikeQuestion"
-          />
+        <LikeButton
+          class="zh-like"
+          :liked="question.liked"
+          :count="question.likeCount ?? 0"
+          @toggle="onLikeQuestion"
+        />
+
         </div>
       </div>
 
@@ -82,10 +83,11 @@
 
               <div class="answer-actions zhihu">
                 <LikeButton
-                  v-model="ans.liked"
+                  :liked="ans.liked"
                   :count="ans.likeCount"
-                  @toggle="(nextLiked) => onToggleAnswer(ans, nextLiked)"
+                  @toggle="() => onToggleAnswer(ans)"
                 />
+
 
 
 
@@ -176,53 +178,47 @@ const toggleComments = (id) => {
 
 
 
-const onToggleAnswer = async (ans, nextLiked) => {
-  const prevLiked = !nextLiked;
+const onToggleAnswer = async (ans) => {
+  const targetLike = !ans.liked; // 想要的状态
 
   try {
     const res = await postStore.likePost({
       id: ans.id,
       type: "answer",
-      like: nextLiked
+      like: targetLike
     });
 
     const data = res.data.data;
+
     ans.liked = data.liked;
     ans.likeCount = data.likeCount;
   } catch {
-    ans.liked = prevLiked;
+    ElMessage.error("操作失败，请稍后重试");
   }
 };
 
+const onLikeQuestion = async () => {
 
+  console.log("before click:", question.value.liked);
 
-
-
-const onLikeQuestion = async (nextLiked) => {
-  const prevLiked = !nextLiked;
+  const targetLike = !question.value.liked;
+  
+  console.log("targetLike:", targetLike);
 
   try {
     const res = await postStore.likePost({
       id: question.value.id,
       type: "question",
-      like: nextLiked
+      like: targetLike
     });
 
     const data = res.data.data;
-
     question.value.liked = data.liked;
     question.value.likeCount = data.likeCount;
   } catch {
-    question.value.liked = prevLiked;
+    ElMessage.error("操作失败");
   }
 };
-
-
-
-
-
-
-
 
 
 onMounted(async () => {

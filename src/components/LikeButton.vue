@@ -1,14 +1,15 @@
 <template>
   <el-button
     class="like-btn"
-    :type="modelValue ? 'primary' : 'default'"
+    :type="liked ? 'primary' : 'default'"
     size="small"
     plain
     round
-    @click="onLike"
+    :disabled="disabled"
+    @click="onClick"
   >
     <el-icon><Pointer /></el-icon>
-    <span>{{ modelValue ? "已赞" : "点赞" }} · {{ count }}</span>
+    <span>{{ liked ? "已赞" : "点赞" }} · {{ count }}</span>
   </el-button>
 </template>
 
@@ -16,28 +17,23 @@
 import { Pointer } from "@element-plus/icons-vue";
 
 const props = defineProps({
-  modelValue: {
+  liked: {
     type: Boolean,
     required: true
   },
   count: {
     type: Number,
     default: 0
-  }
+  },
+  disabled: Boolean
 });
 
-const emit = defineEmits(["update:modelValue", "toggle"]);
+const emit = defineEmits(["toggle"]);
 
-const onLike = (e) => {
+const onClick = (e) => {
   e?.stopPropagation?.();
-
-  const nextLiked = !props.modelValue;
-
-  // 1️⃣ 正确更新 v-model
-  emit("update:modelValue", nextLiked);
-
-  // 2️⃣ 把 nextLiked 明确传给父组件
-  emit("toggle", nextLiked);
+  if (props.disabled) return;
+  emit("toggle");
 };
 </script>
 

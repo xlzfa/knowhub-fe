@@ -67,9 +67,9 @@
         v-if="showLike || showComment"
         class="answer-actions">
           <LikeButton
-            v-model="post.liked"
-            :count="post.likeCount"
-            @toggle="(nextLiked) => onToggleAnswer(post, nextLiked)"
+              :liked="post.liked"
+              :count="post.likeCount"
+            @toggle="() => onToggleAnswer(post)"
           />
 
 
@@ -107,6 +107,7 @@ import CommentList from "../components/CommentList.vue";
 import { usePostStore } from "../stores/posts";
 import { useUserStore } from "../stores/user";
 import { storeToRefs } from "pinia";
+import {ElMessage} from "element-plus";
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -170,31 +171,49 @@ const onQuestionClick = () => {
 };
 
 /* ===== 点赞 ===== */
-const onToggleAnswer = async (ans, nextLiked) => {
-  const prevLiked = !nextLiked;
+const onToggleAnswer = async (ans) => {
+  console.group("🔥 点赞调试开始");
+  console.log("【1】点击前 ans.liked =", ans.liked, "类型 =", typeof ans.liked);
+
+  const targetLike = !Boolean(ans.liked);
+  console.log("【2】即将发送给后端的 like =", targetLike);
 
   try {
     const res = await postStore.likePost({
       id: ans.id,
       type: "answer",
-      like: nextLiked
+      like: targetLike
     });
 
+    console.log("【3】后端原始返回 =", res.data);
+
     const data = res.data.data;
-    ans.liked = data.liked;
-    ans.likeCount = data.likeCount;
-  } catch {
-    ans.liked = prevLiked;
+    console.log("【4】后端返回 liked =", data.liked, "likeCount =", data.likeCount);
+
+    const target = postStore.posts.find(p => p.id === ans.id);
+    console.log("【5】store 里对应的 post =", target);
+
+    if (target) {
+      target.liked = data.liked;
+      target.likeCount = data.likeCount;
+    }
+
+    console.log(
+        "【6】store 修改后 liked =",
+        target?.liked,
+        "likeCount =",
+        target?.likeCount
+    );
+  } catch (e) {
+    console.error("【异常】", e);
   }
+
+  console.groupEnd();
 };
 
-// const onToggle = async () => {
-//   if (!useUserStore().isLoggedIn) {
-//     router.push({ name: "login" });
-//     return;
-//   }
-//   await postStore.likePost(props.post.id, liked.value);
-// };
+
+
+
 
 /* ===== 评论切换 ===== */
 const toggleComments = (id) => {
@@ -218,6 +237,26 @@ const recalcHeight = () => {
   const el = contentRef.value;
   canExpand.value = el.scrollHeight > el.clientHeight + 4;
 };
+
+
+
+import { watch } from "vue";
+
+watch(
+    () => props.post.liked,
+    (val) => {
+      console.log(
+          `🧩 PostCard(id=${props.post.id}) 接收到 liked 变化：`,
+          val
+      );
+    }
+);
+
+
+
+
+
+
 </script>
 
 

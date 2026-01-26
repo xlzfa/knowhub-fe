@@ -114,6 +114,25 @@ onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
   if (observer && bottomSentinel.value) observer.unobserve(bottomSentinel.value);
 });
+
+
+
+import { watch } from "vue";
+
+watch(
+    posts,
+    (val) => {
+      console.log(
+          "👀 父组件 watch posts：",
+          val.map(p => ({ id: p.id, liked: p.liked, likeCount: p.likeCount }))
+      );
+    },
+    { deep: true }
+);
+
+
+
+
 </script>
 
 <style scoped>
