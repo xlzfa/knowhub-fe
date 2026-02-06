@@ -142,14 +142,14 @@ export const usePostStore = defineStore("posts", () => {
 
     /* ===== 更新 feed 列表里的 answer ===== */
     if (type === "answer") {
-      // 1️⃣ 首页 feed（posts）
+      // 1️首页 feed（posts）
       const target = posts.value.find(p => p.id === id);
       if (target) {
         target.liked = data.liked;
         target.likeCount = data.likeCount;
       }
 
-      // 2️⃣ 详情页 answers（currentPost.rows）
+      // 2️详情页 answers（currentPost.rows）
       if (currentPost.value?.rows) {
         const ans = currentPost.value.rows.find(a => a.id === id);
         if (ans) {

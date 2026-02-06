@@ -172,43 +172,33 @@ const onQuestionClick = () => {
 
 /* ===== 点赞 ===== */
 const onToggleAnswer = async (ans) => {
-  console.group("🔥 点赞调试开始");
-  console.log("【1】点击前 ans.liked =", ans.liked, "类型 =", typeof ans.liked);
 
   const targetLike = !Boolean(ans.liked);
-  console.log("【2】即将发送给后端的 like =", targetLike);
 
-  try {
-    const res = await postStore.likePost({
-      id: ans.id,
-      type: "answer",
-      like: targetLike
-    });
 
-    console.log("【3】后端原始返回 =", res.data);
+  const res = await postStore.likePost({
+    id: ans.id,
+    type: "answer",
+    like: targetLike
+  });
 
-    const data = res.data.data;
-    console.log("【4】后端返回 liked =", data.liked, "likeCount =", data.likeCount);
 
-    const target = postStore.posts.find(p => p.id === ans.id);
-    console.log("【5】store 里对应的 post =", target);
+  const data = res.data.data;
 
-    if (target) {
-      target.liked = data.liked;
-      target.likeCount = data.likeCount;
-    }
+  const target = postStore.posts.find(p => p.id === ans.id);
 
-    console.log(
-        "【6】store 修改后 liked =",
-        target?.liked,
-        "likeCount =",
-        target?.likeCount
-    );
-  } catch (e) {
-    console.error("【异常】", e);
+  if (target) {
+    target.liked = data.liked;
+    target.likeCount = data.likeCount;
   }
 
-  console.groupEnd();
+  console.log(
+      target?.liked,
+      "likeCount =",
+      target?.likeCount
+  );
+
+
 };
 
 
