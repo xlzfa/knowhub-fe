@@ -84,6 +84,7 @@
         </div>
 
         <!-- 评论区 -->
+        <!-- 子评论排后 -->
         <CommentList
           v-if="showComment && showComments[post.id]"
           :post-id="post.id"
