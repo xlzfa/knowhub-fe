@@ -17,6 +17,7 @@ export const usePostStore = defineStore("posts", () => {
   const pageSize = ref(10);
   const total = ref(0);
 
+
   // 加载第一页（或指定页），会替换当前列表
   async function loadPosts(p = 1, ps = 10) {
     loading.value = true;

@@ -26,7 +26,7 @@ export const useUserStore = defineStore("user", () => {
 
     // 注意这里取到 token
     const receivedToken = response.data.data.token;
-    console.log("receivedToken:", receivedToken);
+
 
     // 保存 token
     setToken(receivedToken);
@@ -39,6 +39,7 @@ export const useUserStore = defineStore("user", () => {
       bio: response.data.data.bio,
       email: response.data.data.email,
     };
+    console.log("登录用户ID:", response.data.data.id)
 
     localStorage.setItem("user", JSON.stringify(currentUser.value));
   } catch (err) {

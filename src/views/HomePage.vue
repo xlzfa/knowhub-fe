@@ -29,6 +29,11 @@ import PostCard from "../components/PostCard.vue";
 import SidebarHot from "../components/SidebarHot.vue";
 import PaginationBar from "../components/PaginationBar.vue";
 import { usePostStore } from "../stores/posts";
+import { useUserStore } from "../stores/user";
+
+
+
+const userStore = useUserStore();
 
 const postStore = usePostStore();
 const { posts } = storeToRefs(postStore);
@@ -123,13 +128,28 @@ watch(
     posts,
     (val) => {
       console.log(
-          "👀 父组件 watch posts：",
+          "父组件 watch posts：",
           val.map(p => ({ id: p.id, liked: p.liked, likeCount: p.likeCount }))
       );
     },
     { deep: true }
 );
 
+watch(
+    () => userStore.currentUser?.id,
+    async (newId, oldId) => {
+      if (!newId) return;
+
+      console.log("检测到用户切换，刷新首页");
+
+      try {
+        await postStore.loadPosts();
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    { immediate: true }
+);
 
 
 

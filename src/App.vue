@@ -12,7 +12,10 @@
 import { RouterView } from "vue-router";
 import NavBar from "./components/NavBar.vue";
 import FooterBar from "./components/FooterBar.vue";
-
+// import { useUserStore } from "./stores/user";
+//
+//
+// const userStore = useUserStore();
 //初始二次提交
 </script>
 
